@@ -1,12 +1,19 @@
 
+/* -------------------------------------------------------------------------- */
+/*                                 Drive Train                                */
+/* -------------------------------------------------------------------------- */
+
 #include <Servo.h>
 
-Servo servoLeft;                                   // Servo object instances
+
+Servo servoLeft;                                   
 Servo servoRight;
 Servo servoGripper;  
 
 
-const int servoLeftPin = 13;                       // I/O Pin constants
+/* --------------------------------- Pinout --------------------------------- */
+
+const int servoLeftPin = 13;                       
 const int servoRightPin = 12;
 const int servoGripperPin = 11;
 
@@ -17,6 +24,9 @@ const int servoGripperPin = 11;
  */
 double servoLeftPositionValue = 1500;
 double servoRightPositionValue = 1500; 
+
+/* -------------------------------------------------------------------------- */
+
 
 void setup() {
 
@@ -104,40 +114,65 @@ servoLeftPositionValue = map(right, -100, 0, 1500, 1700);
 
 }
 
-/* --------------------------- Auto Drive Commands -------------------------- */
-
+/* ----------------------------- Drive Commands ----------------------------- */
+/** These are the different commands you can give the Robots drivetrain. 
+ * These commands could be useful as auto actions for in the auto modes.
+ */
 void driveTrainStop()
 {
+  
+double servoLeftPositionValue = 1500;
+double servoRightPositionValue = 1500;
 
 } 
 
+//Clockwise is forwards
 void driveTrainForward()
 {
 
+double servoLeftPositionValue = 1300;
+double servoRightPositionValue = 1300;
+
 }
 
+//Conuter clockwise is reverse
 void driveTrainReverse()
 {
+
+double servoLeftPositionValue = 1700;
+double servoRightPositionValue = 1700;
 
 }
 
 void driveTrainSpinLeft()
 {
 
+double servoLeftPositionValue = 1700;
+double servoRightPositionValue = 1300;
+
 }
 
 void driveTrainSpinRight()
 {
+
+double servoLeftPositionValue = 1300;
+double servoRightPositionValue = 1700;
 
 }
 
 void driveTrainTurnLeft()
 {
 
+double servoLeftPositionValue = 1500;
+double servoRightPositionValue = 1300;
+
 }
 
 void driveTrainTurnRight()
 {
+
+double servoLeftPositionValue = 1700;
+double servoRightPositionValue = 1500;
 
 }
 
