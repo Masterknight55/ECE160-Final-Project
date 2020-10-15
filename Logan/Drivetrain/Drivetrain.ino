@@ -14,8 +14,8 @@ Servo servoGripper;
 /* --------------------------------- Pinout --------------------------------- */
 
 const int servoLeftPin = 13;                       
-const int servoRightPin = 12;
-const int servoGripperPin = 11;
+const int servoRightPin = 11;
+const int servoGripperPin = 10;
 
 /** This is the global value for the servo code
  * by setting this global varible in our code 
@@ -32,16 +32,14 @@ void setup() {
 
 
   // put your setup code here, to run once:
-  servoLeft.attach(servoLeftPin);                  
-  servoRight.attach(servoRightPin);                
-  servoTurret.attach(servoGripperPin);              
+  setupServos();
 }
 
 
 void loop()
 {
   // put your main code here, to run repeatedly:
-
+  setServos();
 
 }
 
@@ -51,6 +49,23 @@ void loop()
 /** This section of code uses the write microseconds commands to control how 
  * the robot moves.
  */
+
+
+/** This function actually sets the servo positions and is all that needs 
+ * to be ran in the loop function
+ */
+void setServos()
+{
+servoLeft.writeMicroseconds(servoLeftPositionValue);
+servoRight.writeMicroseconds(servoRightPositionValue);
+}
+
+void setupServos()
+{
+  servoLeft.attach(servoLeftPin);                  
+  servoRight.attach(servoRightPin);                
+  servoTurret.attach(servoGripperPin);              
+}
 
 
 /* -------------------------- Servo Motor Commands -------------------------- */
@@ -65,7 +80,7 @@ void loop()
  * 
  * 1500 - 1700 for turing counter clock wise
  * 
- * This means we can use the map function used i nthe pervious mini projects 
+ * This means we can use the map function used in the pervious mini projects 
  * to map the left and the right motor to the left and right joystick. 
  * 
  */
@@ -97,7 +112,7 @@ servoLeftPositionValue = 1500;
 else if(left > 0)
 {
 
-servoLeftPositionValue = map(left, 0, 100, 1300, 1500);
+servoLeftPositionValue = map(left, 0, 100, 1500, 1300);
 
 }
 
@@ -106,6 +121,31 @@ else if(left < 0)
 {
 
 servoLeftPositionValue = map(right, -100, 0, 1500, 1700);
+
+}
+
+//Left Logic
+if(right == 0)
+{
+
+servoRightPositionValue = 1500;
+
+}
+
+
+//This case means it is positive and will use the clockwise map  
+else if(right > 0)
+{
+
+servoRightPositionValue = map(left, 0, 100, 1500, 1300);
+
+}
+
+//This case measn it is negetive and will use the counter clockwise map
+else if(right < 0)
+{
+
+servoRightPositionValue = map(right, -100, 0, 1500, 1700);
 
 }
 
