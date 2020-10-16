@@ -223,19 +223,19 @@ double servoRightPositionValue = 1500;
 /** This Section of code controls the different states of the servo */
 void gripperClose()
 {
-servo.write(servoGripper, 0);
+servo.write(0);
 }
 
 
 void gripperCenterPosition()
 {
-servo.write(servoGripper, 90);
+servo.write(90);
 }
 
 
 void gripperOpen()
 {
-servo.write(servoGripper, 180);
+servo.write(180);
 }
 
 /* -------------------------------------------------------------------------- */
