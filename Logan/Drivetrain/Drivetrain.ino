@@ -1,21 +1,27 @@
 
-/* -------------------------------------------------------------------------- */
-/*                                 Drive Train                                */
-/* -------------------------------------------------------------------------- */
+#include <PS2X_lib.h>   
+PS2X ps2x; 
+//right now, the library does NOT support hot-pluggable controllers, meaning 
+//you must always either restart your Arduino after you connect the controller, 
+//or call config_gamepad(pins) again after connecting the controller.
+int error = 0; 
+byte type = 0;
+byte vibrate = 0;
+
+
 
 #include <Servo.h>
-
-
 Servo servoLeft;                                   
 Servo servoRight;
 Servo servoGripper;  
 
 
+
 /* --------------------------------- Pinout --------------------------------- */
 
 const int servoLeftPin = 13;                       
-const int servoRightPin = 11;
-const int servoGripperPin = 10;
+const int servoRightPin = 10;
+const int servoGripperPin = 11;
 
 /** This is the global value for the servo code
  * by setting this global varible in our code 
@@ -30,7 +36,7 @@ double servoRightPositionValue = 1500;
 
 void setup() {
 
-
+controllerSetup();
   // put your setup code here, to run once:
   setupServos();
 }
@@ -39,9 +45,164 @@ void setup() {
 void loop()
 {
   // put your main code here, to run repeatedly:
+  controllerLoop();
+  manualControls();
   setServos();
+  //driveTrainManualDrive(100,100);
+  
 
 }
+
+
+/* -------------------------------------------------------------------------- */
+/*                                 Controller                                 */
+/* -------------------------------------------------------------------------- */
+
+void manualControls()
+{
+  
+  driveTrainManualDrive(ps2x.Analog(PSS_LY),ps2x.Analog(PSS_RY));
+
+
+
+}
+
+
+
+
+void controllerSetup()
+{
+  Serial.begin(9600);
+
+error = ps2x.config_gamepad(5,3,4,2, true, true);   //GamePad(clock, command, attention, data, Pressures?, Rumble?) 
+
+if(error == 0){
+  Serial.println("Found Controller, configured successful");
+  Serial.println("Try out all the buttons, X will vibrate the controller, faster as you press harder;");
+ Serial.println("holding L1 or R1 will print out the analog stick values.");
+ Serial.println("Go to www.billporter.info for updates and to report bugs.");
+}
+ else if(error == 1)
+  Serial.println("No controller found, check wiring, see readme.txt to enable debug. visit www.billporter.info for troubleshooting tips");
+ else if(error == 2)
+  Serial.println("Controller found but not accepting commands. see readme.txt to enable debug. Visit www.billporter.info for troubleshooting tips");
+ else if(error == 3)
+  Serial.println("Controller refusing to enter Pressures mode, may not support it. ");
+  type = ps2x.readType(); 
+    switch(type) {
+      case 0:
+       Serial.println("Unknown Controller type");
+      break;
+      case 1:
+       Serial.println("DualShock Controller Found");
+      break;
+      case 2:
+        Serial.println("GuitarHero Controller Found");
+      break;
+    }
+}
+
+void controllerLoop()
+{
+  /* You must Read Gamepad to get new values
+  Read GamePad and set vibration values
+  ps2x.read_gamepad(small motor on/off, larger motor strenght from 0-255)
+  if you don't enable the rumble, use ps2x.read_gamepad(); with no values
+  you should call this at least once a second
+  */
+if(error == 1) 
+ return; 
+if(type == 2){ 
+  ps2x.read_gamepad();          //read controller 
+  if(ps2x.ButtonPressed(GREEN_FRET))
+    Serial.println("Green Fret Pressed");
+  if(ps2x.ButtonPressed(RED_FRET))
+    Serial.println("Red Fret Pressed");
+  if(ps2x.ButtonPressed(YELLOW_FRET))
+    Serial.println("Yellow Fret Pressed");
+  if(ps2x.ButtonPressed(BLUE_FRET))
+    Serial.println("Blue Fret Pressed");
+  if(ps2x.ButtonPressed(ORANGE_FRET))
+    Serial.println("Orange Fret Pressed");
+   if(ps2x.ButtonPressed(STAR_POWER))
+    Serial.println("Star Power Command");
+   if(ps2x.Button(UP_STRUM))          //will be TRUE as long as button is pressed
+    Serial.println("Up Strum");
+   if(ps2x.Button(DOWN_STRUM))
+    Serial.println("DOWN Strum");
+   if(ps2x.Button(PSB_START))                   //will be TRUE as long as button is pressed
+        Serial.println("Start is being held");
+   if(ps2x.Button(PSB_SELECT))
+        Serial.println("Select is being held");
+   if(ps2x.Button(ORANGE_FRET)) // print stick value IF TRUE
+   {
+       Serial.print("Wammy Bar Position:");
+       Serial.println(ps2x.Analog(WHAMMY_BAR), DEC); 
+   } 
+}
+else { //DualShock Controller
+   ps2x.read_gamepad(false, vibrate);          //read controller and set large motor to spin at 'vibrate' speed
+   if(ps2x.Button(PSB_START))                   //will be TRUE as long as button is pressed
+        Serial.println("Start is being held");
+   if(ps2x.Button(PSB_SELECT))
+        Serial.println("Select is being held");
+    if(ps2x.Button(PSB_PAD_UP)) {         //will be TRUE as long as button is pressed
+      Serial.print("Up held this hard: ");
+      Serial.println(ps2x.Analog(PSAB_PAD_UP), DEC);
+     }
+     if(ps2x.Button(PSB_PAD_RIGHT)){
+      Serial.print("Right held this hard: ");
+       Serial.println(ps2x.Analog(PSAB_PAD_RIGHT), DEC);
+     }
+     if(ps2x.Button(PSB_PAD_LEFT)){
+      Serial.print("LEFT held this hard: ");
+       Serial.println(ps2x.Analog(PSAB_PAD_LEFT), DEC);
+     }
+     if(ps2x.Button(PSB_PAD_DOWN)){
+      Serial.print("DOWN held this hard: ");
+    Serial.println(ps2x.Analog(PSAB_PAD_DOWN), DEC);
+     }   
+     vibrate = ps2x.Analog(PSAB_BLUE);        //this will set the large motor vibrate speed based on 
+                                             //how hard you press the blue (X) button    
+   if (ps2x.NewButtonState())               //will be TRUE if any button changes state (on to off, or off to on)
+   {   
+       if(ps2x.Button(PSB_L3))
+        Serial.println("L3 pressed");
+       if(ps2x.Button(PSB_R3))
+        Serial.println("R3 pressed");
+       if(ps2x.Button(PSB_L2))
+        Serial.println("L2 pressed");
+       if(ps2x.Button(PSB_R2))
+        Serial.println("R2 pressed");
+       if(ps2x.Button(PSB_GREEN))
+        Serial.println("Triangle pressed");
+   }   
+   if(ps2x.ButtonPressed(PSB_RED))             //will be TRUE if button was JUST pressed
+        Serial.println("Circle just pressed");
+   if(ps2x.ButtonReleased(PSB_PINK))             //will be TRUE if button was JUST released
+        Serial.println("Square just released");     
+   if(ps2x.NewButtonState(PSB_BLUE))            //will be TRUE if button was JUST pressed OR released
+        Serial.println("X just changed");    
+   if(ps2x.Button(PSB_L1) || ps2x.Button(PSB_R1)) // print stick values if either is TRUE
+   {
+       Serial.print("Stick Values:");
+       Serial.print(ps2x.Analog(PSS_LY), DEC); //Left stick, Y axis. Other options: LX, RY, RX  
+       Serial.print(",");
+       Serial.print(ps2x.Analog(PSS_LX), DEC); 
+       Serial.print(",");
+       Serial.print(ps2x.Analog(PSS_RY), DEC); 
+       Serial.print(",");
+       Serial.println(ps2x.Analog(PSS_RX), DEC); 
+   } 
+}
+delay(50);
+}
+
+
+
+
+
+
 
 /* -------------------------------------------------------------------------- */
 /*                            Drive Train Movement                            */
@@ -100,7 +261,7 @@ void driveTrainManualDrive(double left, double right)
 {
 
 //Left Logic
-if(left == 0)
+if(left>=120 && left <= 130)
 {
 
 servoLeftPositionValue = 1500;
@@ -109,23 +270,23 @@ servoLeftPositionValue = 1500;
 
 
 //This case means it is positive and will use the clockwise map  
-else if(left > 0)
+else if(left > 128)
 {
 
-servoLeftPositionValue = map(left, 0, 100, 1500, 1300);
+servoLeftPositionValue = map(left, 128, 0, 1500, 1700);
 
 }
 
 //This case measn it is negetive and will use the counter clockwise map
-else if(left < 0)
+else if(left < 128)
 {
 
-servoLeftPositionValue = map(right, -100, 0, 1500, 1700);
+servoLeftPositionValue = map(left, 255, 128, 1300,1500 );
 
 }
 
 //Left Logic
-if(right == 0)
+if(right>=120 && right <= 130)
 {
 
 servoRightPositionValue = 1500;
@@ -134,18 +295,20 @@ servoRightPositionValue = 1500;
 
 
 //This case means it is positive and will use the clockwise map  
-else if(right > 0)
+else if(right > 128)
 {
 
-servoRightPositionValue = map(left, 0, 100, 1500, 1300);
+servoRightPositionValue =-(map(right, 255, 128,1700,1500));
+
+
 
 }
 
 //This case measn it is negetive and will use the counter clockwise map
-else if(right < 0)
+else if(right < 128)
 {
 
-servoRightPositionValue = map(right, -100, 0, 1500, 1700);
+servoRightPositionValue = -(map(right, 0, 128, 1300, 1500));
 
 }
 
@@ -223,19 +386,19 @@ double servoRightPositionValue = 1500;
 /** This Section of code controls the different states of the servo */
 void gripperClose()
 {
-servo.write(0);
+servoGripper.write(0);
 }
 
 
 void gripperCenterPosition()
 {
-servo.write(90);
+servoGripper.write(90);
 }
 
 
 void gripperOpen()
 {
-servo.write(180);
+servoGripper.write(180);
 }
 
 /* -------------------------------------------------------------------------- */
