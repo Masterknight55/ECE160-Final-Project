@@ -64,7 +64,7 @@ void setupServos()
 {
   servoLeft.attach(servoLeftPin);                  
   servoRight.attach(servoRightPin);                
-  servoTurret.attach(servoGripperPin);              
+  servoGripper.attach(servoGripperPin);              
 }
 
 
