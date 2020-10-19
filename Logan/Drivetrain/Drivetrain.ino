@@ -62,6 +62,18 @@ void manualControls()
 {
   
   driveTrainManualDrive(ps2x.Analog(PSS_LY),ps2x.Analog(PSS_RY));
+if(ps2x.Button(PSB_L2))
+{
+  gripperOpen();
+}
+else if(ps2x.Button(PSB_R2))
+{
+  gripperClose();
+}
+else
+{
+  gripperCenterPosition();
+}
 
 
 
@@ -298,7 +310,7 @@ servoRightPositionValue = 1500;
 else if(right > 128)
 {
 
-servoRightPositionValue =-(map(right, 255, 128,1700,1500));
+servoRightPositionValue =(map(right, 255, 128,1700,1500));
 
 
 
@@ -308,7 +320,7 @@ servoRightPositionValue =-(map(right, 255, 128,1700,1500));
 else if(right < 128)
 {
 
-servoRightPositionValue = -(map(right, 0, 128, 1300, 1500));
+servoRightPositionValue = (map(right, 0, 128, 1300, 1500));
 
 }
 
@@ -377,6 +389,7 @@ void driveTrainTurnRight()
 double servoLeftPositionValue = 1700;
 double servoRightPositionValue = 1500;
 
+
 }
 
 /* -------------------------------------------------------------------------- */
@@ -386,7 +399,7 @@ double servoRightPositionValue = 1500;
 /** This Section of code controls the different states of the servo */
 void gripperClose()
 {
-servoGripper.write(0);
+servoGripper.write(180);
 }
 
 
@@ -398,7 +411,7 @@ servoGripper.write(90);
 
 void gripperOpen()
 {
-servoGripper.write(180);
+servoGripper.write(90);
 }
 
 /* -------------------------------------------------------------------------- */
