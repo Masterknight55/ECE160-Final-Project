@@ -346,7 +346,7 @@ void driveTrainForward()
 {
 
 double servoLeftPositionValue = 1300;
-double servoRightPositionValue = 1300;
+double servoRightPositionValue = 1700;
 
 }
 
@@ -355,7 +355,7 @@ void driveTrainReverse()
 {
 
 double servoLeftPositionValue = 1700;
-double servoRightPositionValue = 1700;
+double servoRightPositionValue = 1300;
 
 }
 
@@ -363,7 +363,7 @@ void driveTrainSpinLeft()
 {
 
 double servoLeftPositionValue = 1700;
-double servoRightPositionValue = 1300;
+double servoRightPositionValue = 1700;
 
 }
 
@@ -371,7 +371,7 @@ void driveTrainSpinRight()
 {
 
 double servoLeftPositionValue = 1300;
-double servoRightPositionValue = 1700;
+double servoRightPositionValue = 1300;
 
 }
 
