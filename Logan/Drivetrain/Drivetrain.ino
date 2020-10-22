@@ -1,5 +1,14 @@
+#include <SPI.h>
+#include <NRFLite.h>
 
-#include <PS2X_lib.h>   
+
+#include <nRF24L01.h>
+#include <NRFLite.h>
+
+
+#include <PS2X_lib.h>
+#include <EIRremote.h>
+#include <EIRremoteInt.h>   
 PS2X ps2x; 
 //right now, the library does NOT support hot-pluggable controllers, meaning 
 //you must always either restart your Arduino after you connect the controller, 
@@ -15,13 +24,26 @@ Servo servoLeft;
 Servo servoRight;
 Servo servoGripper;  
 
+int IRPin = 12;
+IRrecv myIR(IRPin);
+decode_results results;
+
+//Reciver Pins and stuff
+NRFLite _radio;
+unsigned long _data;
+
+int x = 0;
+int y = 0;
+int button = 0;
 
 
 /* --------------------------------- Pinout --------------------------------- */
 
-const int servoLeftPin = 13;                       
-const int servoRightPin = 10;
-const int servoGripperPin = 11;
+const int servoLeftPin = 6;                       
+const int servoRightPin = 7;
+const int servoGripperPin = 8;
+
+
 
 /** This is the global value for the servo code
  * by setting this global varible in our code 
@@ -31,24 +53,28 @@ const int servoGripperPin = 11;
 double servoLeftPositionValue = 1500;
 double servoRightPositionValue = 1500; 
 
+double analogZero = 523;
+
 /* -------------------------------------------------------------------------- */
 
 
 void setup() {
 
-controllerSetup();
+//controllerSetup();
+
   // put your setup code here, to run once:
   setupServos();
+  reciverSetup();
 }
 
 
 void loop()
 {
   // put your main code here, to run repeatedly:
-  controllerLoop();
-  manualControls();
+  //controllerLoop();
+  //manualControls();
+  reciverLoop();
   setServos();
-  //driveTrainManualDrive(100,100);
   
 
 }
@@ -266,6 +292,40 @@ void setupServos()
  */
 
 
+// /* ------------------------ Single Joystick Controls ------------------------ */
+// /** This will use a a recived value to control the robot */
+
+// void singleJoystick()
+// {  
+
+
+//   if(xRecive() > 4)
+//   {
+//     servoLeftPositionValue = map(xRecive,0,1023,1600,1700);
+//     servoRightPositionValue = map(xRecive,0,1023,1400,1300);
+//   }
+//   else if(yRecive() > 526)
+//   {
+//     servoLeftPositionValue = map(xRecive,0,1023,1600,1700);
+//     servoRightPositionValue = map(xRecive,0,1023,1600,1700);
+//   }
+//   else if(yRecive() < 526)
+//   {
+//     servoLeftPositionValue = map(xRecive,0,1023,1400,1300);
+//     servoRightPositionValue = map(xRecive,0,1023,1400,1300);
+//   }
+//   else
+//   {
+//     servoLeftPositionValue = 1500;
+//     servoRightPositionValue = 1500;
+//   }
+  
+  
+
+// }
+
+
+
 /* -------------------------- Manual Drive Function ------------------------- */
 
 //TODO Figure out the values for the analog stick. Righ now they are at -100 and 100 
@@ -345,8 +405,8 @@ double servoRightPositionValue = 1500;
 void driveTrainForward()
 {
 
-double servoLeftPositionValue = 1300;
-double servoRightPositionValue = 1700;
+double servoLeftPositionValue = 1400;
+double servoRightPositionValue = 1600;
 
 }
 
@@ -416,4 +476,86 @@ servoGripper.write(90);
 
 /* -------------------------------------------------------------------------- */
 
+/* ----------------------------- Motion Profile ----------------------------- */
+  double BasicCosineMotionProfile(double input, double scale)
+    {
+        if(input < 0)
+			{
+				return -1 * (2 * (cos(input * scale + 3.14) + 1));
+			}
+			if (input > 0)
+			{
+				return 2 * (cos(input * scale + 3.14) + 1);	
+			}
+			else
+			{
+				return 0;
+			}
+     
+	}
+/* -------------------------------------------------------------------------- */
 
+
+/* -------------------------------------------------------------------------- */
+/*                            Transmitter Functions                           */
+/* -------------------------------------------------------------------------- */
+
+void reciverSetup()
+{
+  Serial.begin(115200);
+_radio.init(3, 9, 10); // Set this radio's Id = 1, along with its CE and CSN pins
+}
+
+void reciverLoop()
+{
+while (_radio.hasData())
+    {
+        _radio.readData(&_data);
+
+        x = (_data & 2095104)>>11;
+
+        y = (_data & 2046)>>1;
+
+        button = _data & 1;
+
+        
+        Serial.println(_data,BIN);
+        //Serial.println("X Axis:");
+        Serial.println(x);
+        //Serial.println("Y Axis:");
+        Serial.println(y);
+        Serial.println(button);
+  if(button == 1)
+  {
+    servoGripper.write(90);
+  }
+  else
+  {
+    servoGripper.write(180);
+  }
+  
+
+  if(x > 4)
+  {
+    servoLeft.writeMicroseconds(1700);
+    servoRight.writeMicroseconds(1300);
+  }
+  else if(y > 526)
+  {
+    servoLeft.writeMicroseconds(1700);
+    servoRight.writeMicroseconds(1700);
+  }
+  else if(y < 526)
+  {
+    servoLeft.writeMicroseconds(1300);
+    servoRight.writeMicroseconds(1300);
+  }
+  else
+  {
+    servoLeft.writeMicroseconds(1500);
+    servoRight.writeMicroseconds(1500);
+  }
+        
+    }
+
+}
