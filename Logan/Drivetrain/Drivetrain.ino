@@ -60,20 +60,26 @@ double analogZero = 523;
 
 void setup() {
 
-//controllerSetup();
+
 
   // put your setup code here, to run once:
   setupServos();
-  reciverSetup();
+  
+  controllerSetup();
+  //Trans 
+  //reciverSetup();
 }
 
 
 void loop()
 {
   // put your main code here, to run repeatedly:
-  //controllerLoop();
-  //manualControls();
-  reciverLoop();
+  controllerLoop();
+  manualControls();
+
+  //Trans 
+  //reciverLoop();
+  
   setServos();
   
 
@@ -88,6 +94,8 @@ void manualControls()
 {
   
   driveTrainManualDrive(ps2x.Analog(PSS_LY),ps2x.Analog(PSS_RY));
+  
+  
 if(ps2x.Button(PSB_L2))
 {
   gripperOpen();
@@ -110,7 +118,7 @@ else
 
 void controllerSetup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
 
 error = ps2x.config_gamepad(5,3,4,2, true, true);   //GamePad(clock, command, attention, data, Pressures?, Rumble?) 
 
@@ -525,27 +533,39 @@ while (_radio.hasData())
         //Serial.println("Y Axis:");
         Serial.println(y);
         Serial.println(button);
+  
   if(button == 1)
   {
-    servoGripper.write(90);
+    //180 closed 
+    servoGripper.write(180);
+    
+
   }
   else
   {
-    servoGripper.write(180);
+    //90
+    servoGripper.write(90);
+
+    
   }
   
 
-  if(x > 4)
+  if(x > 40)
   {
     servoLeft.writeMicroseconds(1700);
     servoRight.writeMicroseconds(1300);
   }
-  else if(y > 526)
+  else if((x < 40) && (x > 5))
+  {
+    servoLeft.writeMicroseconds(1300);
+    servoRight.writeMicroseconds(1700);
+  }
+  else if(y > 530)
   {
     servoLeft.writeMicroseconds(1700);
     servoRight.writeMicroseconds(1700);
   }
-  else if(y < 526)
+  else if(y < 520)
   {
     servoLeft.writeMicroseconds(1300);
     servoRight.writeMicroseconds(1300);
