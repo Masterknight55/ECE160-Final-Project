@@ -1,18 +1,19 @@
-#include <SPI.h>
-#include <NRFLite.h>
+
+/* --------------------------------- Imports -------------------------------- */
+
+//#include <SPI.h>
+//#include <NRFLite.h>
 
 
-#include <nRF24L01.h>
-#include <NRFLite.h>
+//#include <nRF24L01.h>
+//#include <NRFLite.h>
 
 
 #include <PS2X_lib.h>
-#include <EIRremote.h>
-#include <EIRremoteInt.h>   
+
+
 PS2X ps2x; 
-//right now, the library does NOT support hot-pluggable controllers, meaning 
-//you must always either restart your Arduino after you connect the controller, 
-//or call config_gamepad(pins) again after connecting the controller.
+
 int error = 0; 
 byte type = 0;
 byte vibrate = 0;
@@ -24,25 +25,31 @@ Servo servoLeft;
 Servo servoRight;
 Servo servoGripper;  
 
-int IRPin = 12;
-IRrecv myIR(IRPin);
-decode_results results;
+//int IRPin = 12;
+//IRrecv myIR(IRPin);
+//decode_results results;
 
 //Reciver Pins and stuff
-NRFLite _radio;
-unsigned long _data;
+//NRFLite _radio;
+//unsigned long _data;
 
-int x = 0;
-int y = 0;
-int button = 0;
+//int x = 0;
+//int y = 0;
+//int button = 0;
 
 
 /* --------------------------------- Pinout --------------------------------- */
 
-const int servoLeftPin = 6;                       
-const int servoRightPin = 7;
-const int servoGripperPin = 8;
+const int servoLeftPin = 13;                       
+const int servoRightPin = 12;
+const int servoGripperPin = 10;
 
+int rightLightSensorPin = 2; // Left Sensor on Analog Pin 2
+int leftLightSensorPin = 1; // Right Sensor on Analog Pin 1
+int middleLightSensorPin = 0; // Middle Sensor on Analog Pin 0
+
+double whiteLevel = 0;
+double blackLevel = 0;
 
 
 /** This is the global value for the servo code
@@ -57,6 +64,10 @@ double analogZero = 523;
 
 /* -------------------------------------------------------------------------- */
 
+
+/* -------------------------------------------------------------------------- */
+/*                                Main Section                                */
+/* -------------------------------------------------------------------------- */
 
 void setup() {
 
@@ -90,11 +101,19 @@ void loop()
 /*                                 Controller                                 */
 /* -------------------------------------------------------------------------- */
 
+
+/* ----------------------------- Manual Controls ---------------------------- */
+
 void manualControls()
 {
+
+  //driveTrainManualDrive(ps2x.Analog(PSS_LY), ps2x.Analog(PSS_RY)); 
+  //ps2x.Analog(PSS_LY)
+  //ps2x.Analog(PSS_RY)
+
+  driveTrainManualDrive(ps2x.Analog(PSS_LY), ps2x.Analog(PSS_RY));
   
-  driveTrainManualDrive(ps2x.Analog(PSS_LY),ps2x.Analog(PSS_RY));
-  
+//tankDriveMovement(map(joystickDeadzoner(ps2x.Analog(PSS_LY)), 0,255,-100,100), map(joystickDeadzoner(ps2x.Analog(PSS_RY)), 0,255,-100,100));
   
 if(ps2x.Button(PSB_L2))
 {
@@ -109,12 +128,11 @@ else
   gripperCenterPosition();
 }
 
-
-
 }
+/* -------------------------------------------------------------------------- */
 
 
-
+/* ------------------------------ Control Setup ----------------------------- */
 
 void controllerSetup()
 {
@@ -147,6 +165,9 @@ if(error == 0){
       break;
     }
 }
+
+/* -------------------------------------------------------------------------- */
+
 
 void controllerLoop()
 {
@@ -245,6 +266,27 @@ delay(50);
 }
 
 
+double joystickDeadzoner(double joystick)
+{
+  if(joystick > 130)
+  {
+    return joystick;
+  }
+  else if(joystick < 125)
+  {
+    return joystick;
+  }
+  else
+  {
+    return 0;
+  }
+  
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
 
 
 
@@ -297,46 +339,14 @@ void setupServos()
 /**This will be the main function used to control the drive train. The left
  * and the right parameters will be used with the controllers left and right
  * analog sticks. 
+ * 
+ * 
  */
-
-
-// /* ------------------------ Single Joystick Controls ------------------------ */
-// /** This will use a a recived value to control the robot */
-
-// void singleJoystick()
-// {  
-
-
-//   if(xRecive() > 4)
-//   {
-//     servoLeftPositionValue = map(xRecive,0,1023,1600,1700);
-//     servoRightPositionValue = map(xRecive,0,1023,1400,1300);
-//   }
-//   else if(yRecive() > 526)
-//   {
-//     servoLeftPositionValue = map(xRecive,0,1023,1600,1700);
-//     servoRightPositionValue = map(xRecive,0,1023,1600,1700);
-//   }
-//   else if(yRecive() < 526)
-//   {
-//     servoLeftPositionValue = map(xRecive,0,1023,1400,1300);
-//     servoRightPositionValue = map(xRecive,0,1023,1400,1300);
-//   }
-//   else
-//   {
-//     servoLeftPositionValue = 1500;
-//     servoRightPositionValue = 1500;
-//   }
-  
-  
-
-// }
-
 
 
 /* -------------------------- Manual Drive Function ------------------------- */
 
-//TODO Figure out the values for the analog stick. Righ now they are at -100 and 100 
+ 
 void driveTrainManualDrive(double left, double right)
 {
 
@@ -353,7 +363,9 @@ servoLeftPositionValue = 1500;
 else if(left > 128)
 {
 
-servoLeftPositionValue = map(left, 128, 0, 1500, 1700);
+
+servoLeftPositionValue = ( 100 * BasicCosineMotionProfile(map(left,128,0,0,100) ,1)) + 1500; 
+//servoLeftPositionValue = map(left, 128, 0, 1500, 1600);
 
 }
 
@@ -361,8 +373,8 @@ servoLeftPositionValue = map(left, 128, 0, 1500, 1700);
 else if(left < 128)
 {
 
-servoLeftPositionValue = map(left, 255, 128, 1300,1500 );
-
+//servoLeftPositionValue = map(left, 255, 128, 1400,1500);
+servoLeftPositionValue = 1500 + (100 * BasicCosineMotionProfile(map(left,255,128,0,100) ,1));
 }
 
 //Left Logic
@@ -378,8 +390,8 @@ servoRightPositionValue = 1500;
 else if(right > 128)
 {
 
-servoRightPositionValue =(map(right, 255, 128,1700,1500));
-
+//servoRightPositionValue =(map(right, 255, 128,1600,1500));
+servoRightPositionValue = 1600 - ( 100 * BasicCosineMotionProfile(map(right,128,0,0,100) ,1));
 
 
 }
@@ -388,14 +400,49 @@ servoRightPositionValue =(map(right, 255, 128,1700,1500));
 else if(right < 128)
 {
 
-servoRightPositionValue = (map(right, 0, 128, 1300, 1500));
-
+//servoRightPositionValue = (map(right, 0, 128, 1400, 1500));
+servoRightPositionValue = 1500 - (100 * BasicCosineMotionProfile(map(right,255,128,0,100) ,1));
 }
 
+
+}
 /* -------------------------------------------------------------------------- */
 
+/* -------------------------------------------------------------------------- */
+/*                    Updated Tank Drive Movement Function                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * This function will be a much more simplfied version of the other function
+ * it will also make way more sense. It will mapped to -100 for full reverse 
+ * and full 100 for forward rather than the weird joystick values. Also 
+ * we can just map the joystick to -100 to 100. This one also uses a cosine
+ * motion profile so it be smoooooooooth. 
+ *  **/
+
+void tankDriveMovement(double left, double right)
+{
+if(left == 0)
+{
+servoLeftPositionValue = 1500;  
+}
+else
+{
+servoLeftPositionValue =  (100 * BasicCosineMotionProfile(left,1) + 1500);
+}
+
+if(right == 0)
+{
+  servoRightPositionValue = 1500;
+}
+else
+{
+  servoRightPositionValue = (-100 * BasicCosineMotionProfile(right,1) + 1500);
+}
 
 }
+
+
 
 /* ----------------------------- Drive Commands ----------------------------- */
 /** These are the different commands you can give the Robots drivetrain. 
@@ -505,77 +552,236 @@ servoGripper.write(90);
 
 
 /* -------------------------------------------------------------------------- */
-/*                            Transmitter Functions                           */
+/*                                 Auto Stuff                                 */
 /* -------------------------------------------------------------------------- */
+/**
+ * This sectino of code is for all of the auto stuff. There are modes for 
+ * the different delivery options and there are actions for the different 
+ * actions the robot can do.  
+ * **/
 
-void reciverSetup()
+
+
+
+/* ------------------------------- Auto Modes ------------------------------- */
+
+
+
+
+
+
+/* ------------------------------ Auto Actions ------------------------------ */
+
+
+
+//Gripper Commands
+void closeGripper()
 {
-  Serial.begin(115200);
-_radio.init(3, 9, 10); // Set this radio's Id = 1, along with its CE and CSN pins
+
 }
 
-void reciverLoop()
+void openGripper()
 {
-while (_radio.hasData())
-    {
-        _radio.readData(&_data);
 
-        x = (_data & 2095104)>>11;
+}
 
-        y = (_data & 2046)>>1;
 
-        button = _data & 1;
+//Line Following
+void lineFollow()
+{
 
-        
-        Serial.println(_data,BIN);
-        //Serial.println("X Axis:");
-        Serial.println(x);
-        //Serial.println("Y Axis:");
-        Serial.println(y);
-        Serial.println(button);
-  
-  if(button == 1)
+}
+
+void lineFollowWithSonarSlowdown()
+{
+
+}
+
+//Drivetrain 
+void driveForward(double power)
+{
+servoLeft.writeMicroseconds(1500+power);
+servoRight.writeMicroseconds(1500-power);
+}
+
+
+
+void spinLeft()
+{
+servoLeft.writeMicroseconds(1600);
+servoRight.writeMicroseconds(1600);
+}
+
+void spinRight()
+{
+servoLeft.writeMicroseconds(1400);
+servoRight.writeMicroseconds(1400);
+}
+
+
+
+//Booleans 
+boolean isInCenter()
+{
+  return false;
+}
+
+boolean wallToLeft()
+{
+  return false;
+}
+
+boolean walltoRight()
+{
+  return false;
+}
+
+
+//Line Following Booleans
+void lineFollowCalibrate()
+{
+
+}
+
+
+boolean lineFollowLeftSensor()
+{
+  if(readQD(leftLightSensorPin) <= whiteLevel)
   {
-    //180 closed 
-    servoGripper.write(180);
-    
-
+    return true;
   }
   else
   {
-    //90
-    servoGripper.write(90);
-
-    
+    return false;
   }
   
+  
+}
 
-  if(x > 40)
+boolean lineFollowRightSensor()
+{
+  if(readQD(rightLightSensorPin) <= whiteLevel)
   {
-    servoLeft.writeMicroseconds(1700);
-    servoRight.writeMicroseconds(1300);
-  }
-  else if((x < 40) && (x > 5))
-  {
-    servoLeft.writeMicroseconds(1300);
-    servoRight.writeMicroseconds(1700);
-  }
-  else if(y > 530)
-  {
-    servoLeft.writeMicroseconds(1700);
-    servoRight.writeMicroseconds(1700);
-  }
-  else if(y < 520)
-  {
-    servoLeft.writeMicroseconds(1300);
-    servoRight.writeMicroseconds(1300);
+    return true;
   }
   else
   {
-    servoLeft.writeMicroseconds(1500);
-    servoRight.writeMicroseconds(1500);
+    return false;
   }
-        
-    }
-
 }
+
+boolean lineFollowCenterSensor()
+{
+  if(readQD(middleLightSensorPin) <= whiteLevel)
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// /* -------------------------------------------------------------------------- */
+// /*                            Transmitter Functions                           */
+// /* -------------------------------------------------------------------------- */
+
+// void reciverSetup()
+// {
+//   Serial.begin(115200);
+// _radio.init(3, 9, 10); // Set this radio's Id = 1, along with its CE and CSN pins
+// }
+
+// void reciverLoop()
+// {
+// while (_radio.hasData())
+//     {
+//         _radio.readData(&_data);
+
+//         x = (_data & 2095104)>>11;
+
+//         y = (_data & 2046)>>1;
+
+//         button = _data & 1;
+
+        
+//         Serial.println(_data,BIN);
+//         //Serial.println("X Axis:");
+//         Serial.println(x);
+//         //Serial.println("Y Axis:");
+//         Serial.println(y);
+//         Serial.println(button);
+  
+//   if(button == 1)
+//   {
+//     //180 closed 
+//     servoGripper.write(180);
+    
+
+//   }
+//   else
+//   {
+//     //90
+//     servoGripper.write(90);
+
+    
+//   }
+  
+
+//   if(x > 40)
+//   {
+//     servoLeft.writeMicroseconds(1700);
+//     servoRight.writeMicroseconds(1300);
+//   }
+//   else if((x < 40) && (x > 5))
+//   {
+//     servoLeft.writeMicroseconds(1300);
+//     servoRight.writeMicroseconds(1700);
+//   }
+//   else if(y > 530)
+//   {
+//     servoLeft.writeMicroseconds(1700);
+//     servoRight.writeMicroseconds(1700);
+//   }
+//   else if(y < 520)
+//   {
+//     servoLeft.writeMicroseconds(1300);
+//     servoRight.writeMicroseconds(1300);
+//   }
+//   else
+//   {
+//     servoLeft.writeMicroseconds(1500);
+//     servoRight.writeMicroseconds(1500);
+//   }
+        
+//     }
+
+// }
