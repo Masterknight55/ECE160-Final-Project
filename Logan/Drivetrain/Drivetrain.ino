@@ -94,11 +94,14 @@ void loop()
   // put your main code here, to run repeatedly:
   controllerLoop();
   manualControls();
+  printSensorValues();
 
   //Trans 
   //reciverLoop();
   
   setServos();
+
+  printSensorValues();
   
 
 }
@@ -594,15 +597,33 @@ void openGripper()
 
 
 //Line Following
-void lineFollow()
+void lineFollow(double maxSpeed)
 {
+
+if(lineFollowLeftSensor() && !(lineFollowCenterSensor())&& !(lineFollowRightSensor()) ){
+    servoLeft.writeMicroseconds(maxSpeed-25);
+    servoRight.writeMicroseconds(maxSpeed);
+  }
+  if (!(lineFollowLeftSensor()) && lineFollowCenterSensor() && !(lineFollowRightSensor())){
+    servoLeft.writeMicroseconds(maxSpeed);
+    servoRight.writeMicroseconds(maxSpeed);
+  }
+  if (!(lineFollowLeftSensor()) && !(lineFollowCenterSensor()) && (lineFollowRightSensor())){
+    servoLeft.writeMicroseconds(maxSpeed);
+    servoRight.writeMicroseconds(maxSpeed-25);
+  }
+  if ((lineFollowLeftSensor()) && (lineFollowCenterSensor()) && !(lineFollowRightSensor())){
+    servoLeft.writeMicroseconds(maxSpeed-12.5);
+    servoRight.writeMicroseconds(maxSpeed);
+  }
+  if(!(lineFollowLeftSensor()) && (lineFollowCenterSensor()) && (lineFollowRightSensor())){
+    servoLeft.writeMicroseconds(maxSpeed);
+    servoRight.writeMicroseconds(maxSpeed-12.5);
+  }
+
 
 }
 
-void lineFollowWithSonarSlowdown()
-{
-
-}
 
 //Drivetrain 
 void driveForward(double power)
@@ -659,7 +680,7 @@ void lineFollowCalibrate()
 
 boolean lineFollowLeftSensor()
 {
-  if(readQD(leftLightSensorPin) <= whiteLevel)
+  if(analogRead(leftLightSensorPin) <= whiteLevel)
   {
     return true;
   }
@@ -673,7 +694,7 @@ boolean lineFollowLeftSensor()
 
 boolean lineFollowRightSensor()
 {
-  if(readQD(rightLightSensorPin) <= whiteLevel)
+  if(analogRead(rightLightSensorPin) <= whiteLevel)
   {
     return true;
   }
@@ -685,7 +706,7 @@ boolean lineFollowRightSensor()
 
 boolean lineFollowCenterSensor()
 {
-  if(readQD(middleLightSensorPin) <= whiteLevel)
+  if(analogRead(middleLightSensorPin) <= whiteLevel)
   {
     return true;
   }
@@ -710,10 +731,10 @@ double rightSonarrValue()
   return sonarrValueInches(rightSonarrPin);
 }
 
-double sonarrValueInches(int pingpin) {
+double sonarrValueInches(int pingPin) {
   // establish variables for duration of the ping, and the distance result
   // in inches and centimeters:
-  long duration, inches, cm;
+  
 
   // The PING))) is triggered by a HIGH pulse of 2 or more microseconds.
   // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
@@ -728,11 +749,11 @@ double sonarrValueInches(int pingpin) {
   // whose duration is the time (in microseconds) from the sending of the ping
   // to the reception of its echo off of an object.
   pinMode(pingPin, INPUT);
-  duration = pulseIn(pingPin, HIGH);
+  
 
   // convert the time into a distance
   
-  return microseconds / 74 / 2;
+  return pulseIn(pingPin, HIGH) / 74 / 2;
 
 
   delay(100);
@@ -751,14 +772,31 @@ double sonarrValueInches(int pingpin) {
 void printSensorValues()
 {
 
-Serial.println("Middle Sensor" readQD(middleLightSensorPin));
-Serial.println("Right Sensor" readQD(RightLightSensorPin));
-Serial.println("Left Sensor" readQD(LeftLightSensorPin));
+//Serial.println(analogRead(middleLightSensorPin));
 
-Serial.println("Front Sonarr" frontSonarrValue());
-Serial.println("Right Sonarr" rightSonarrPin());
-Serial.println("Left Sonarr" leftLightSensorPin());
+ Serial.print("| Middle Sensor: ");
+ Serial.print(analogRead(middleLightSensorPin));
+ Serial.print("| Right Sensor: ");
+ Serial.print(analogRead(rightLightSensorPin));
+ Serial.print("| Left Sensor: ");
+ Serial.print(analogRead(leftLightSensorPin));
 
+Serial.println("");
+Serial.println("--------------------------------------");
+Serial.println("");
+
+
+ Serial.print("| Front Sonarr: ");
+ Serial.print(frontSonarrValue());
+ Serial.print("| Right Sonarr: ");
+ Serial.print(rightSonarrValue());
+ Serial.print("| Left Sonarr: ");
+ Serial.print(leftSonarrValue());
+
+
+Serial.println("");
+Serial.println("--------------------------------------");
+Serial.println("");
 }
 
 
@@ -859,18 +897,4 @@ Serial.println("Left Sonarr" leftLightSensorPin());
         
 //     }
 
-<<<<<<< Updated upstream
 // }
-=======
-}
-
-
-
-void SensorRead()
-{
-
-  Serial.println()
-
-
-}
->>>>>>> Stashed changes
