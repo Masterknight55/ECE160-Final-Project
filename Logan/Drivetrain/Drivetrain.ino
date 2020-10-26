@@ -11,6 +11,8 @@
 
 #include <PS2X_lib.h>
 
+#include <SR04.h>
+
 
 PS2X ps2x; 
 
@@ -47,6 +49,11 @@ const int servoGripperPin = 10;
 int rightLightSensorPin = 2; // Left Sensor on Analog Pin 2
 int leftLightSensorPin = 1; // Right Sensor on Analog Pin 1
 int middleLightSensorPin = 0; // Middle Sensor on Analog Pin 0
+
+int frontSonarrPin = 6;
+int rightSonarrPin = 8;
+int leftSonarrPin = 7;
+
 
 double whiteLevel = 0;
 double blackLevel = 0;
@@ -688,23 +695,71 @@ boolean lineFollowCenterSensor()
   }
 }
 
-//Sonarr Sensors
+/* ------------------------------ Sonarr Stuff ------------------------------ */
+
 double frontSonarrValue()
 {
-  return 0.0;
+  return sonarrValueInches(frontSonarrPin);
 }
 double leftSonarrValue()
 {
-  return 0.0;
+  return sonarrValueInches(leftSonarrPin);
 }
 double rightSonarrValue()
 {
-  return 0.0;
+  return sonarrValueInches(rightSonarrPin);
 }
 
+double sonarrValueInches(int pingpin) {
+  // establish variables for duration of the ping, and the distance result
+  // in inches and centimeters:
+  long duration, inches, cm;
+
+  // The PING))) is triggered by a HIGH pulse of 2 or more microseconds.
+  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
+  pinMode(pingPin, OUTPUT);
+  digitalWrite(pingPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(pingPin, HIGH);
+  delayMicroseconds(5);
+  digitalWrite(pingPin, LOW);
+
+  // The same pin is used to read the signal from the PING))): a HIGH pulse
+  // whose duration is the time (in microseconds) from the sending of the ping
+  // to the reception of its echo off of an object.
+  pinMode(pingPin, INPUT);
+  duration = pulseIn(pingPin, HIGH);
+
+  // convert the time into a distance
+  
+  return microseconds / 74 / 2;
+
+
+  delay(100);
+}
+
+/* -------------------------------------------------------------------------- */
 
 
 
+
+
+/* -------------------------------------------------------------------------- */
+/*                               Sensor Values!                               */
+/* -------------------------------------------------------------------------- */
+
+void printSensorValues()
+{
+
+Serial.println("Middle Sensor" readQD(middleLightSensorPin));
+Serial.println("Right Sensor" readQD(RightLightSensorPin));
+Serial.println("Left Sensor" readQD(LeftLightSensorPin));
+
+Serial.println("Front Sonarr" frontSonarrValue());
+Serial.println("Right Sonarr" rightSonarrPin());
+Serial.println("Left Sonarr" leftLightSensorPin());
+
+}
 
 
 
