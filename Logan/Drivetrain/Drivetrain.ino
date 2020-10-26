@@ -604,6 +604,12 @@ servoLeft.writeMicroseconds(1500+power);
 servoRight.writeMicroseconds(1500-power);
 }
 
+void driveReverse(double power)
+{
+servoLeft.writeMicroseconds(1500-power);
+servoRight.writeMicroseconds(1500+power);
+}
+
 
 
 void spinLeft()
@@ -680,6 +686,20 @@ boolean lineFollowCenterSensor()
   {
     return false;
   }
+}
+
+//Sonarr Sensors
+double frontSonarrValue()
+{
+  return 0.0;
+}
+double leftSonarrValue()
+{
+  return 0.0;
+}
+double rightSonarrValue()
+{
+  return 0.0;
 }
 
 
