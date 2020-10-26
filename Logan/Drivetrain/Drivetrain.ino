@@ -804,4 +804,18 @@ double rightSonarrValue()
         
 //     }
 
+<<<<<<< Updated upstream
 // }
+=======
+}
+
+
+
+void SensorRead()
+{
+
+  Serial.println()
+
+
+}
+>>>>>>> Stashed changes
