@@ -4,28 +4,23 @@
 //#include <SPI.h>
 //#include <NRFLite.h>
 
-
 //#include <nRF24L01.h>
 //#include <NRFLite.h>
-
 
 #include <PS2X_lib.h>
 
 #include <SR04.h>
 
+PS2X ps2x;
 
-PS2X ps2x; 
-
-int error = 0; 
+int error = 0;
 byte type = 0;
 byte vibrate = 0;
 
-
-
 #include <Servo.h>
-Servo servoLeft;                                   
+Servo servoLeft;
 Servo servoRight;
-Servo servoGripper;  
+Servo servoGripper;
 
 //int IRPin = 12;
 //IRrecv myIR(IRPin);
@@ -39,25 +34,22 @@ Servo servoGripper;
 //int y = 0;
 //int button = 0;
 
-
 /* --------------------------------- Pinout --------------------------------- */
 
-const int servoLeftPin = 13;                       
+const int servoLeftPin = 13;
 const int servoRightPin = 12;
 const int servoGripperPin = 10;
 
-int rightLightSensorPin = 2; // Left Sensor on Analog Pin 2
-int leftLightSensorPin = 1; // Right Sensor on Analog Pin 1
-int middleLightSensorPin = 0; // Middle Sensor on Analog Pin 0
+int rightLightSensorPin = A1;  // Left Sensor on Analog Pin 2
+int leftLightSensorPin = A2;   // Right Sensor on Analog Pin 1
+int middleLightSensorPin = A3; // Middle Sensor on Analog Pin 0
 
 int frontSonarrPin = 6;
 int rightSonarrPin = 8;
 int leftSonarrPin = 7;
 
-
-double whiteLevel = 0;
+double whiteLevel = 900;
 double blackLevel = 0;
-
 
 /** This is the global value for the servo code
  * by setting this global varible in our code 
@@ -65,82 +57,74 @@ double blackLevel = 0;
  * with setting the servo. 
  */
 double servoLeftPositionValue = 1500;
-double servoRightPositionValue = 1500; 
+double servoRightPositionValue = 1500;
 
 double analogZero = 523;
 
 /* -------------------------------------------------------------------------- */
 
-
 /* -------------------------------------------------------------------------- */
 /*                                Main Section                                */
 /* -------------------------------------------------------------------------- */
 
-void setup() {
-
-
+void setup()
+{
 
   // put your setup code here, to run once:
   setupServos();
-  
+
   controllerSetup();
-  //Trans 
+  //Trans
   //reciverSetup();
 }
-
 
 void loop()
 {
   // put your main code here, to run repeatedly:
   controllerLoop();
   manualControls();
-  printSensorValues();
-
-  //Trans 
+  //printSensorValues();
+  lineFollow(1400, 1600);
+  //driveForward(50);
+  //Trans
   //reciverLoop();
-  
-  setServos();
+
+  //setServos();
 
   printSensorValues();
-  
-
 }
-
 
 /* -------------------------------------------------------------------------- */
 /*                                 Controller                                 */
 /* -------------------------------------------------------------------------- */
-
 
 /* ----------------------------- Manual Controls ---------------------------- */
 
 void manualControls()
 {
 
-  //driveTrainManualDrive(ps2x.Analog(PSS_LY), ps2x.Analog(PSS_RY)); 
+  //driveTrainManualDrive(ps2x.Analog(PSS_LY), ps2x.Analog(PSS_RY));
   //ps2x.Analog(PSS_LY)
   //ps2x.Analog(PSS_RY)
 
   driveTrainManualDrive(ps2x.Analog(PSS_LY), ps2x.Analog(PSS_RY));
-  
-//tankDriveMovement(map(joystickDeadzoner(ps2x.Analog(PSS_LY)), 0,255,-100,100), map(joystickDeadzoner(ps2x.Analog(PSS_RY)), 0,255,-100,100));
-  
-if(ps2x.Button(PSB_L2))
-{
-  gripperOpen();
-}
-else if(ps2x.Button(PSB_R2))
-{
-  gripperClose();
-}
-else
-{
-  gripperCenterPosition();
-}
 
+  //tankDriveMovement(map(joystickDeadzoner(ps2x.Analog(PSS_LY)), 0,255,-100,100), map(joystickDeadzoner(ps2x.Analog(PSS_RY)), 0,255,-100,100));
+
+  if (ps2x.Button(PSB_L2))
+  {
+    gripperOpen();
+  }
+  else if (ps2x.Button(PSB_R2))
+  {
+    gripperClose();
+  }
+  else
+  {
+    gripperCenterPosition();
+  }
 }
 /* -------------------------------------------------------------------------- */
-
 
 /* ------------------------------ Control Setup ----------------------------- */
 
@@ -148,36 +132,37 @@ void controllerSetup()
 {
   Serial.begin(115200);
 
-error = ps2x.config_gamepad(5,3,4,2, true, true);   //GamePad(clock, command, attention, data, Pressures?, Rumble?) 
+  error = ps2x.config_gamepad(5, 3, 4, 2, true, true); //GamePad(clock, command, attention, data, Pressures?, Rumble?)
 
-if(error == 0){
-  Serial.println("Found Controller, configured successful");
-  Serial.println("Try out all the buttons, X will vibrate the controller, faster as you press harder;");
- Serial.println("holding L1 or R1 will print out the analog stick values.");
- Serial.println("Go to www.billporter.info for updates and to report bugs.");
-}
- else if(error == 1)
-  Serial.println("No controller found, check wiring, see readme.txt to enable debug. visit www.billporter.info for troubleshooting tips");
- else if(error == 2)
-  Serial.println("Controller found but not accepting commands. see readme.txt to enable debug. Visit www.billporter.info for troubleshooting tips");
- else if(error == 3)
-  Serial.println("Controller refusing to enter Pressures mode, may not support it. ");
-  type = ps2x.readType(); 
-    switch(type) {
-      case 0:
-       Serial.println("Unknown Controller type");
-      break;
-      case 1:
-       Serial.println("DualShock Controller Found");
-      break;
-      case 2:
-        Serial.println("GuitarHero Controller Found");
-      break;
-    }
+  if (error == 0)
+  {
+    Serial.println("Found Controller, configured successful");
+    Serial.println("Try out all the buttons, X will vibrate the controller, faster as you press harder;");
+    Serial.println("holding L1 or R1 will print out the analog stick values.");
+    Serial.println("Go to www.billporter.info for updates and to report bugs.");
+  }
+  else if (error == 1)
+    Serial.println("No controller found, check wiring, see readme.txt to enable debug. visit www.billporter.info for troubleshooting tips");
+  else if (error == 2)
+    Serial.println("Controller found but not accepting commands. see readme.txt to enable debug. Visit www.billporter.info for troubleshooting tips");
+  else if (error == 3)
+    Serial.println("Controller refusing to enter Pressures mode, may not support it. ");
+  type = ps2x.readType();
+  switch (type)
+  {
+  case 0:
+    Serial.println("Unknown Controller type");
+    break;
+  case 1:
+    Serial.println("DualShock Controller Found");
+    break;
+  case 2:
+    Serial.println("GuitarHero Controller Found");
+    break;
+  }
 }
 
 /* -------------------------------------------------------------------------- */
-
 
 void controllerLoop()
 {
@@ -187,102 +172,107 @@ void controllerLoop()
   if you don't enable the rumble, use ps2x.read_gamepad(); with no values
   you should call this at least once a second
   */
-if(error == 1) 
- return; 
-if(type == 2){ 
-  ps2x.read_gamepad();          //read controller 
-  if(ps2x.ButtonPressed(GREEN_FRET))
-    Serial.println("Green Fret Pressed");
-  if(ps2x.ButtonPressed(RED_FRET))
-    Serial.println("Red Fret Pressed");
-  if(ps2x.ButtonPressed(YELLOW_FRET))
-    Serial.println("Yellow Fret Pressed");
-  if(ps2x.ButtonPressed(BLUE_FRET))
-    Serial.println("Blue Fret Pressed");
-  if(ps2x.ButtonPressed(ORANGE_FRET))
-    Serial.println("Orange Fret Pressed");
-   if(ps2x.ButtonPressed(STAR_POWER))
-    Serial.println("Star Power Command");
-   if(ps2x.Button(UP_STRUM))          //will be TRUE as long as button is pressed
-    Serial.println("Up Strum");
-   if(ps2x.Button(DOWN_STRUM))
-    Serial.println("DOWN Strum");
-   if(ps2x.Button(PSB_START))                   //will be TRUE as long as button is pressed
-        Serial.println("Start is being held");
-   if(ps2x.Button(PSB_SELECT))
-        Serial.println("Select is being held");
-   if(ps2x.Button(ORANGE_FRET)) // print stick value IF TRUE
-   {
-       Serial.print("Wammy Bar Position:");
-       Serial.println(ps2x.Analog(WHAMMY_BAR), DEC); 
-   } 
-}
-else { //DualShock Controller
-   ps2x.read_gamepad(false, vibrate);          //read controller and set large motor to spin at 'vibrate' speed
-   if(ps2x.Button(PSB_START))                   //will be TRUE as long as button is pressed
-        Serial.println("Start is being held");
-   if(ps2x.Button(PSB_SELECT))
-        Serial.println("Select is being held");
-    if(ps2x.Button(PSB_PAD_UP)) {         //will be TRUE as long as button is pressed
+  if (error == 1)
+    return;
+  if (type == 2)
+  {
+    ps2x.read_gamepad(); //read controller
+    if (ps2x.ButtonPressed(GREEN_FRET))
+      Serial.println("Green Fret Pressed");
+    if (ps2x.ButtonPressed(RED_FRET))
+      Serial.println("Red Fret Pressed");
+    if (ps2x.ButtonPressed(YELLOW_FRET))
+      Serial.println("Yellow Fret Pressed");
+    if (ps2x.ButtonPressed(BLUE_FRET))
+      Serial.println("Blue Fret Pressed");
+    if (ps2x.ButtonPressed(ORANGE_FRET))
+      Serial.println("Orange Fret Pressed");
+    if (ps2x.ButtonPressed(STAR_POWER))
+      Serial.println("Star Power Command");
+    if (ps2x.Button(UP_STRUM)) //will be TRUE as long as button is pressed
+      Serial.println("Up Strum");
+    if (ps2x.Button(DOWN_STRUM))
+      Serial.println("DOWN Strum");
+    if (ps2x.Button(PSB_START)) //will be TRUE as long as button is pressed
+      Serial.println("Start is being held");
+    if (ps2x.Button(PSB_SELECT))
+      Serial.println("Select is being held");
+    if (ps2x.Button(ORANGE_FRET)) // print stick value IF TRUE
+    {
+      Serial.print("Wammy Bar Position:");
+      Serial.println(ps2x.Analog(WHAMMY_BAR), DEC);
+    }
+  }
+  else
+  {                                    //DualShock Controller
+    ps2x.read_gamepad(false, vibrate); //read controller and set large motor to spin at 'vibrate' speed
+    if (ps2x.Button(PSB_START))        //will be TRUE as long as button is pressed
+      Serial.println("Start is being held");
+    if (ps2x.Button(PSB_SELECT))
+      Serial.println("Select is being held");
+    if (ps2x.Button(PSB_PAD_UP))
+    { //will be TRUE as long as button is pressed
       Serial.print("Up held this hard: ");
       Serial.println(ps2x.Analog(PSAB_PAD_UP), DEC);
-     }
-     if(ps2x.Button(PSB_PAD_RIGHT)){
+    }
+    if (ps2x.Button(PSB_PAD_RIGHT))
+    {
       Serial.print("Right held this hard: ");
-       Serial.println(ps2x.Analog(PSAB_PAD_RIGHT), DEC);
-     }
-     if(ps2x.Button(PSB_PAD_LEFT)){
+      Serial.println(ps2x.Analog(PSAB_PAD_RIGHT), DEC);
+    }
+    if (ps2x.Button(PSB_PAD_LEFT))
+    {
       Serial.print("LEFT held this hard: ");
-       Serial.println(ps2x.Analog(PSAB_PAD_LEFT), DEC);
-     }
-     if(ps2x.Button(PSB_PAD_DOWN)){
+      Serial.println(ps2x.Analog(PSAB_PAD_LEFT), DEC);
+    }
+    if (ps2x.Button(PSB_PAD_DOWN))
+    {
       Serial.print("DOWN held this hard: ");
-    Serial.println(ps2x.Analog(PSAB_PAD_DOWN), DEC);
-     }   
-     vibrate = ps2x.Analog(PSAB_BLUE);        //this will set the large motor vibrate speed based on 
-                                             //how hard you press the blue (X) button    
-   if (ps2x.NewButtonState())               //will be TRUE if any button changes state (on to off, or off to on)
-   {   
-       if(ps2x.Button(PSB_L3))
+      Serial.println(ps2x.Analog(PSAB_PAD_DOWN), DEC);
+    }
+    vibrate = ps2x.Analog(PSAB_BLUE); //this will set the large motor vibrate speed based on
+                                      //how hard you press the blue (X) button
+    if (ps2x.NewButtonState())        //will be TRUE if any button changes state (on to off, or off to on)
+    {
+      if (ps2x.Button(PSB_L3))
         Serial.println("L3 pressed");
-       if(ps2x.Button(PSB_R3))
+      if (ps2x.Button(PSB_R3))
         Serial.println("R3 pressed");
-       if(ps2x.Button(PSB_L2))
+      if (ps2x.Button(PSB_L2))
         Serial.println("L2 pressed");
-       if(ps2x.Button(PSB_R2))
+      if (ps2x.Button(PSB_R2))
         Serial.println("R2 pressed");
-       if(ps2x.Button(PSB_GREEN))
+      if (ps2x.Button(PSB_GREEN))
         Serial.println("Triangle pressed");
-   }   
-   if(ps2x.ButtonPressed(PSB_RED))             //will be TRUE if button was JUST pressed
-        Serial.println("Circle just pressed");
-   if(ps2x.ButtonReleased(PSB_PINK))             //will be TRUE if button was JUST released
-        Serial.println("Square just released");     
-   if(ps2x.NewButtonState(PSB_BLUE))            //will be TRUE if button was JUST pressed OR released
-        Serial.println("X just changed");    
-   if(ps2x.Button(PSB_L1) || ps2x.Button(PSB_R1)) // print stick values if either is TRUE
-   {
-       Serial.print("Stick Values:");
-       Serial.print(ps2x.Analog(PSS_LY), DEC); //Left stick, Y axis. Other options: LX, RY, RX  
-       Serial.print(",");
-       Serial.print(ps2x.Analog(PSS_LX), DEC); 
-       Serial.print(",");
-       Serial.print(ps2x.Analog(PSS_RY), DEC); 
-       Serial.print(",");
-       Serial.println(ps2x.Analog(PSS_RX), DEC); 
-   } 
+    }
+    if (ps2x.ButtonPressed(PSB_RED)) //will be TRUE if button was JUST pressed
+      Serial.println("Circle just pressed");
+    if (ps2x.ButtonReleased(PSB_PINK)) //will be TRUE if button was JUST released
+      Serial.println("Square just released");
+    if (ps2x.NewButtonState(PSB_BLUE)) //will be TRUE if button was JUST pressed OR released
+      Serial.println("X just changed");
+    if (ps2x.Button(PSB_L1) || ps2x.Button(PSB_R1)) // print stick values if either is TRUE
+    {
+      Serial.print("Stick Values:");
+      Serial.print(ps2x.Analog(PSS_LY), DEC); //Left stick, Y axis. Other options: LX, RY, RX
+      Serial.print(",");
+      Serial.print(ps2x.Analog(PSS_LX), DEC);
+      Serial.print(",");
+      Serial.print(ps2x.Analog(PSS_RY), DEC);
+      Serial.print(",");
+      Serial.println(ps2x.Analog(PSS_RX), DEC);
+    }
+  }
+  delay(50);
 }
-delay(50);
-}
-
 
 double joystickDeadzoner(double joystick)
 {
-  if(joystick > 130)
+  if (joystick > 130)
   {
     return joystick;
   }
-  else if(joystick < 125)
+  else if (joystick < 125)
   {
     return joystick;
   }
@@ -290,17 +280,9 @@ double joystickDeadzoner(double joystick)
   {
     return 0;
   }
-  
 }
 
-
 /* -------------------------------------------------------------------------- */
-
-
-
-
-
-
 
 /* -------------------------------------------------------------------------- */
 /*                            Drive Train Movement                            */
@@ -309,23 +291,21 @@ double joystickDeadzoner(double joystick)
  * the robot moves.
  */
 
-
 /** This function actually sets the servo positions and is all that needs 
  * to be ran in the loop function
  */
 void setServos()
 {
-servoLeft.writeMicroseconds(servoLeftPositionValue);
-servoRight.writeMicroseconds(servoRightPositionValue);
+  servoLeft.writeMicroseconds(servoLeftPositionValue);
+  servoRight.writeMicroseconds(servoRightPositionValue);
 }
 
 void setupServos()
 {
-  servoLeft.attach(servoLeftPin);                  
-  servoRight.attach(servoRightPin);                
-  servoGripper.attach(servoGripperPin);              
+  servoLeft.attach(servoLeftPin);
+  servoRight.attach(servoRightPin);
+  servoGripper.attach(servoGripperPin);
 }
-
 
 /* -------------------------- Servo Motor Commands -------------------------- */
 /** 
@@ -345,7 +325,6 @@ void setupServos()
  */
 /* -------------------------------------------------------------------------- */
 
-
 /**This will be the main function used to control the drive train. The left
  * and the right parameters will be used with the controllers left and right
  * analog sticks. 
@@ -353,68 +332,56 @@ void setupServos()
  * 
  */
 
-
 /* -------------------------- Manual Drive Function ------------------------- */
 
- 
 void driveTrainManualDrive(double left, double right)
 {
 
-//Left Logic
-if(left>=120 && left <= 130)
-{
+  //Left Logic
+  if (left >= 120 && left <= 130)
+  {
 
-servoLeftPositionValue = 1500;
+    servoLeftPositionValue = 1500;
+  }
 
-}
+  //This case means it is positive and will use the clockwise map
+  else if (left > 128)
+  {
 
+    servoLeftPositionValue = (100 * BasicCosineMotionProfile(map(left, 128, 0, 0, 100), 1)) + 1500;
+    //servoLeftPositionValue = map(left, 128, 0, 1500, 1600);
+  }
 
-//This case means it is positive and will use the clockwise map  
-else if(left > 128)
-{
+  //This case measn it is negetive and will use the counter clockwise map
+  else if (left < 128)
+  {
 
+    //servoLeftPositionValue = map(left, 255, 128, 1400,1500);
+    servoLeftPositionValue = 1500 + (100 * BasicCosineMotionProfile(map(left, 255, 128, 0, 100), 1));
+  }
 
-servoLeftPositionValue = ( 100 * BasicCosineMotionProfile(map(left,128,0,0,100) ,1)) + 1500; 
-//servoLeftPositionValue = map(left, 128, 0, 1500, 1600);
+  //Left Logic
+  if (right >= 120 && right <= 130)
+  {
 
-}
+    servoRightPositionValue = 1500;
+  }
 
-//This case measn it is negetive and will use the counter clockwise map
-else if(left < 128)
-{
+  //This case means it is positive and will use the clockwise map
+  else if (right > 128)
+  {
 
-//servoLeftPositionValue = map(left, 255, 128, 1400,1500);
-servoLeftPositionValue = 1500 + (100 * BasicCosineMotionProfile(map(left,255,128,0,100) ,1));
-}
+    //servoRightPositionValue =(map(right, 255, 128,1600,1500));
+    servoRightPositionValue = 1600 - (100 * BasicCosineMotionProfile(map(right, 128, 0, 0, 100), 1));
+  }
 
-//Left Logic
-if(right>=120 && right <= 130)
-{
+  //This case measn it is negetive and will use the counter clockwise map
+  else if (right < 128)
+  {
 
-servoRightPositionValue = 1500;
-
-}
-
-
-//This case means it is positive and will use the clockwise map  
-else if(right > 128)
-{
-
-//servoRightPositionValue =(map(right, 255, 128,1600,1500));
-servoRightPositionValue = 1600 - ( 100 * BasicCosineMotionProfile(map(right,128,0,0,100) ,1));
-
-
-}
-
-//This case measn it is negetive and will use the counter clockwise map
-else if(right < 128)
-{
-
-//servoRightPositionValue = (map(right, 0, 128, 1400, 1500));
-servoRightPositionValue = 1500 - (100 * BasicCosineMotionProfile(map(right,255,128,0,100) ,1));
-}
-
-
+    //servoRightPositionValue = (map(right, 0, 128, 1400, 1500));
+    servoRightPositionValue = 1500 - (100 * BasicCosineMotionProfile(map(right, 255, 128, 0, 100), 1));
+  }
 }
 /* -------------------------------------------------------------------------- */
 
@@ -432,27 +399,24 @@ servoRightPositionValue = 1500 - (100 * BasicCosineMotionProfile(map(right,255,1
 
 void tankDriveMovement(double left, double right)
 {
-if(left == 0)
-{
-servoLeftPositionValue = 1500;  
-}
-else
-{
-servoLeftPositionValue =  (100 * BasicCosineMotionProfile(left,1) + 1500);
-}
+  if (left == 0)
+  {
+    servoLeftPositionValue = 1500;
+  }
+  else
+  {
+    servoLeftPositionValue = (100 * BasicCosineMotionProfile(left, 1) + 1500);
+  }
 
-if(right == 0)
-{
-  servoRightPositionValue = 1500;
+  if (right == 0)
+  {
+    servoRightPositionValue = 1500;
+  }
+  else
+  {
+    servoRightPositionValue = (-100 * BasicCosineMotionProfile(right, 1) + 1500);
+  }
 }
-else
-{
-  servoRightPositionValue = (-100 * BasicCosineMotionProfile(right,1) + 1500);
-}
-
-}
-
-
 
 /* ----------------------------- Drive Commands ----------------------------- */
 /** These are the different commands you can give the Robots drivetrain. 
@@ -460,106 +424,93 @@ else
  */
 void driveTrainStop()
 {
-  
-double servoLeftPositionValue = 1500;
-double servoRightPositionValue = 1500;
 
-} 
+  double servoLeftPositionValue = 1500;
+  double servoRightPositionValue = 1500;
+}
 
 //Clockwise is forwards
 void driveTrainForward()
 {
 
-double servoLeftPositionValue = 1400;
-double servoRightPositionValue = 1600;
-
+  double servoLeftPositionValue = 1400;
+  double servoRightPositionValue = 1600;
 }
 
 //Conuter clockwise is reverse
 void driveTrainReverse()
 {
 
-double servoLeftPositionValue = 1700;
-double servoRightPositionValue = 1300;
-
+  double servoLeftPositionValue = 1700;
+  double servoRightPositionValue = 1300;
 }
 
 void driveTrainSpinLeft()
 {
 
-double servoLeftPositionValue = 1700;
-double servoRightPositionValue = 1700;
-
+  double servoLeftPositionValue = 1700;
+  double servoRightPositionValue = 1700;
 }
 
 void driveTrainSpinRight()
 {
 
-double servoLeftPositionValue = 1300;
-double servoRightPositionValue = 1300;
-
+  double servoLeftPositionValue = 1300;
+  double servoRightPositionValue = 1300;
 }
 
 void driveTrainTurnLeft()
 {
 
-double servoLeftPositionValue = 1500;
-double servoRightPositionValue = 1300;
-
+  double servoLeftPositionValue = 1500;
+  double servoRightPositionValue = 1300;
 }
 
 void driveTrainTurnRight()
 {
 
-double servoLeftPositionValue = 1700;
-double servoRightPositionValue = 1500;
-
-
+  double servoLeftPositionValue = 1700;
+  double servoRightPositionValue = 1500;
 }
 
 /* -------------------------------------------------------------------------- */
-
 
 /* ---------------------------- Gripper Commands ---------------------------- */
 /** This Section of code controls the different states of the servo */
 void gripperClose()
 {
-servoGripper.write(180);
+  servoGripper.write(180);
 }
-
 
 void gripperCenterPosition()
 {
-servoGripper.write(90);
+  servoGripper.write(90);
 }
-
 
 void gripperOpen()
 {
-servoGripper.write(90);
+  servoGripper.write(90);
 }
 
 /* -------------------------------------------------------------------------- */
 
 /* ----------------------------- Motion Profile ----------------------------- */
-  double BasicCosineMotionProfile(double input, double scale)
-    {
-        if(input < 0)
-			{
-				return -1 * (2 * (cos(input * scale + 3.14) + 1));
-			}
-			if (input > 0)
-			{
-				return 2 * (cos(input * scale + 3.14) + 1);	
-			}
-			else
-			{
-				return 0;
-			}
-     
-	}
+double BasicCosineMotionProfile(double input, double scale)
+{
+  if (input < 0)
+  {
+    return -1 * (2 * (cos(input * scale + 3.14) + 1));
+  }
+  if (input > 0)
+  {
+    return 2 * (cos(input * scale + 3.14) + 1);
+  }
+  else
+  {
+    return 0;
+  }
+}
 /* -------------------------------------------------------------------------- */
-
 
 /* -------------------------------------------------------------------------- */
 /*                                 Auto Stuff                                 */
@@ -570,91 +521,89 @@ servoGripper.write(90);
  * actions the robot can do.  
  * **/
 
-
-
-
 /* ------------------------------- Auto Modes ------------------------------- */
 
-
-
-
-
-
 /* ------------------------------ Auto Actions ------------------------------ */
-
-
 
 //Gripper Commands
 void closeGripper()
 {
-
 }
 
 void openGripper()
 {
-
 }
-
 
 //Line Following
-void lineFollow(double maxSpeed)
+void lineFollow(double maxSpeedRight, double maxSpeedLeft)
 {
 
-if(lineFollowLeftSensor() && !(lineFollowCenterSensor())&& !(lineFollowRightSensor()) ){
-    servoLeft.writeMicroseconds(maxSpeed-25);
-    servoRight.writeMicroseconds(maxSpeed);
+  if (lineFollowLeftSensor() && !(lineFollowCenterSensor()) && !(lineFollowRightSensor()))
+  {
+    servoLeftPositionValue=maxSpeedRight;
+    servoRightPositionValue=maxSpeedLeft-50;
+    Serial.println("I SHOULD BE TURNING LEFT HARD");
   }
-  if (!(lineFollowLeftSensor()) && lineFollowCenterSensor() && !(lineFollowRightSensor())){
-    servoLeft.writeMicroseconds(maxSpeed);
-    servoRight.writeMicroseconds(maxSpeed);
+  else if (!(lineFollowLeftSensor()) && lineFollowCenterSensor() && !(lineFollowRightSensor()))
+  {
+    servoLeftPositionValue=(maxSpeedLeft);
+    servoRightPositionValue=(maxSpeedRight);
+    Serial.println("I SHOULD BE GOING STRAIGHT");
   }
-  if (!(lineFollowLeftSensor()) && !(lineFollowCenterSensor()) && (lineFollowRightSensor())){
-    servoLeft.writeMicroseconds(maxSpeed);
-    servoRight.writeMicroseconds(maxSpeed-25);
+  else if (!(lineFollowLeftSensor()) && !(lineFollowCenterSensor()) && (lineFollowRightSensor()))
+  {
+    servoLeftPositionValue=(maxSpeedLeft);
+    servoRightPositionValue=(maxSpeedRight - 50);
+    Serial.println("I SHOULD BE TURNING RIGHT HARD");
   }
-  if ((lineFollowLeftSensor()) && (lineFollowCenterSensor()) && !(lineFollowRightSensor())){
-    servoLeft.writeMicroseconds(maxSpeed-12.5);
-    servoRight.writeMicroseconds(maxSpeed);
+  else if ((lineFollowLeftSensor()) && (lineFollowCenterSensor()) && !(lineFollowRightSensor()))
+  {
+    servoLeftPositionValue=(maxSpeedLeft - 25);
+    servoRightPositionValue=(maxSpeedRight);
+    Serial.println("I SHOULD BE TURNING LEFT VERY VERY VERY LITTLE");
   }
-  if(!(lineFollowLeftSensor()) && (lineFollowCenterSensor()) && (lineFollowRightSensor())){
-    servoLeft.writeMicroseconds(maxSpeed);
-    servoRight.writeMicroseconds(maxSpeed-12.5);
+  else if (!(lineFollowLeftSensor()) && (lineFollowCenterSensor()) && (lineFollowRightSensor()))
+  {
+    servoLeftPositionValue=(maxSpeedLeft);
+    servoRightPositionValue=(maxSpeedRight - 25);
+    Serial.println("I SHOULD BE TURNING RIGHT VERY VERY VERY LITTLE");
   }
-
-
+  else if ((lineFollowLeftSensor()) && (lineFollowCenterSensor()) && (lineFollowRightSensor())){
+    Serial.println("I AM ACTUALLY FUCKING WORKING THIS IS THE ALL WHITE ONE");
+  }
+  else
+  {
+    /* code */
+  }
+  
 }
 
-
-//Drivetrain 
+//Drivetrain
 void driveForward(double power)
 {
-servoLeft.writeMicroseconds(1500+power);
-servoRight.writeMicroseconds(1500-power);
+  servoLeft.writeMicroseconds(1500 + power);
+  servoRight.writeMicroseconds(1500 - power);
 }
 
 void driveReverse(double power)
 {
-servoLeft.writeMicroseconds(1500-power);
-servoRight.writeMicroseconds(1500+power);
+  servoLeft.writeMicroseconds(1500 - power);
+  servoRight.writeMicroseconds(1500 + power);
 }
-
-
 
 void spinLeft()
 {
-servoLeft.writeMicroseconds(1600);
-servoRight.writeMicroseconds(1600);
+  servoLeft.writeMicroseconds(1600);
+  servoRight.writeMicroseconds(1600);
 }
 
 void spinRight()
 {
-servoLeft.writeMicroseconds(1400);
-servoRight.writeMicroseconds(1400);
+  servoLeft.writeMicroseconds(1400);
+  servoRight.writeMicroseconds(1400);
 }
 
-
-
-//Booleans 
+//Booleans
 boolean isInCenter()
 {
   return false;
@@ -670,17 +619,14 @@ boolean walltoRight()
   return false;
 }
 
-
 //Line Following Booleans
 void lineFollowCalibrate()
 {
-
 }
-
 
 boolean lineFollowLeftSensor()
 {
-  if(analogRead(leftLightSensorPin) <= whiteLevel)
+  if (analogRead(leftLightSensorPin) <= whiteLevel)
   {
     return true;
   }
@@ -688,13 +634,11 @@ boolean lineFollowLeftSensor()
   {
     return false;
   }
-  
-  
 }
 
 boolean lineFollowRightSensor()
 {
-  if(analogRead(rightLightSensorPin) <= whiteLevel)
+  if (analogRead(rightLightSensorPin) <= whiteLevel)
   {
     return true;
   }
@@ -706,7 +650,7 @@ boolean lineFollowRightSensor()
 
 boolean lineFollowCenterSensor()
 {
-  if(analogRead(middleLightSensorPin) <= whiteLevel)
+  if (analogRead(middleLightSensorPin) <= whiteLevel)
   {
     return true;
   }
@@ -731,10 +675,10 @@ double rightSonarrValue()
   return sonarrValueInches(rightSonarrPin);
 }
 
-double sonarrValueInches(int pingPin) {
+double sonarrValueInches(int pingPin)
+{
   // establish variables for duration of the ping, and the distance result
   // in inches and centimeters:
-  
 
   // The PING))) is triggered by a HIGH pulse of 2 or more microseconds.
   // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
@@ -749,21 +693,15 @@ double sonarrValueInches(int pingPin) {
   // whose duration is the time (in microseconds) from the sending of the ping
   // to the reception of its echo off of an object.
   pinMode(pingPin, INPUT);
-  
 
   // convert the time into a distance
-  
-  return pulseIn(pingPin, HIGH) / 74 / 2;
 
+  return pulseIn(pingPin, HIGH) / 74 / 2;
 
   delay(100);
 }
 
 /* -------------------------------------------------------------------------- */
-
-
-
-
 
 /* -------------------------------------------------------------------------- */
 /*                               Sensor Values!                               */
@@ -772,56 +710,42 @@ double sonarrValueInches(int pingPin) {
 void printSensorValues()
 {
 
-//Serial.println(analogRead(middleLightSensorPin));
+  //Serial.println(analogRead(middleLightSensorPin));
 
- Serial.print("| Middle Sensor: ");
- Serial.print(analogRead(middleLightSensorPin));
- Serial.print("| Right Sensor: ");
- Serial.print(analogRead(rightLightSensorPin));
- Serial.print("| Left Sensor: ");
- Serial.print(analogRead(leftLightSensorPin));
+  Serial.print("| Middle Sensor: ");
+  Serial.print(analogRead(middleLightSensorPin));
+  Serial.println("");
+  Serial.print("-------------------------");
+  Serial.println("");
+  Serial.print(lineFollowCenterSensor());
+  Serial.print("| Right Sensor: ");
+  Serial.print(analogRead(rightLightSensorPin));
+  Serial.println("");
+  Serial.print("---------------------------");
+  Serial.println("");
+  Serial.print(lineFollowRightSensor());
+  Serial.print("| Left Sensor: ");
+  Serial.print(analogRead(leftLightSensorPin));
+  Serial.println("");
+  Serial.print("--------------------");
+  Serial.print(lineFollowLeftSensor());
+  Serial.println("");
 
-Serial.println("");
-Serial.println("--------------------------------------");
-Serial.println("");
+  Serial.println("");
+  Serial.println("--------------------------------------");
+  Serial.println("");
 
+  Serial.print("| Front Sonarr: ");
+  Serial.print(frontSonarrValue());
+  Serial.print("| Right Sonarr: ");
+  Serial.print(rightSonarrValue());
+  Serial.print("| Left Sonarr: ");
+  Serial.print(leftSonarrValue());
 
- Serial.print("| Front Sonarr: ");
- Serial.print(frontSonarrValue());
- Serial.print("| Right Sonarr: ");
- Serial.print(rightSonarrValue());
- Serial.print("| Left Sonarr: ");
- Serial.print(leftSonarrValue());
-
-
-Serial.println("");
-Serial.println("--------------------------------------");
-Serial.println("");
+  Serial.println("");
+  Serial.println("--------------------------------------");
+  Serial.println("");
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // /* -------------------------------------------------------------------------- */
 // /*                            Transmitter Functions                           */
@@ -845,19 +769,17 @@ Serial.println("");
 
 //         button = _data & 1;
 
-        
 //         Serial.println(_data,BIN);
 //         //Serial.println("X Axis:");
 //         Serial.println(x);
 //         //Serial.println("Y Axis:");
 //         Serial.println(y);
 //         Serial.println(button);
-  
+
 //   if(button == 1)
 //   {
-//     //180 closed 
+//     //180 closed
 //     servoGripper.write(180);
-    
 
 //   }
 //   else
@@ -865,9 +787,7 @@ Serial.println("");
 //     //90
 //     servoGripper.write(90);
 
-    
 //   }
-  
 
 //   if(x > 40)
 //   {
@@ -894,7 +814,7 @@ Serial.println("");
 //     servoLeft.writeMicroseconds(1500);
 //     servoRight.writeMicroseconds(1500);
 //   }
-        
+
 //     }
 
 // }
