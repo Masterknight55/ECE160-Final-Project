@@ -22,6 +22,11 @@ Servo servoLeft;
 Servo servoRight;
 Servo servoGripper;
 
+int right = 1;
+int left =  2;
+int straight =  3;
+int previousLineFollowState = 0;
+
 //int IRPin = 12;
 //IRrecv myIR(IRPin);
 //decode_results results;
@@ -40,15 +45,15 @@ const int servoLeftPin = 13;
 const int servoRightPin = 12;
 const int servoGripperPin = 10;
 
-int rightLightSensorPin = A1;  // Left Sensor on Analog Pin 2
-int leftLightSensorPin = A2;   // Right Sensor on Analog Pin 1
+int rightLightSensorPin = A2;  // Left Sensor on Analog Pin 2
+int leftLightSensorPin = A1;   // Right Sensor on Analog Pin 1
 int middleLightSensorPin = A3; // Middle Sensor on Analog Pin 0
 
 int frontSonarrPin = 6;
 int rightSonarrPin = 8;
 int leftSonarrPin = 7;
 
-double whiteLevel = 900;
+double whiteLevel = 600;
 double blackLevel = 0;
 
 /** This is the global value for the servo code
@@ -72,7 +77,7 @@ void setup()
 
   // put your setup code here, to run once:
   setupServos();
-
+gripperClose();
   controllerSetup();
   //Trans
   //reciverSetup();
@@ -81,10 +86,12 @@ void setup()
 void loop()
 {
   // put your main code here, to run repeatedly:
-  controllerLoop();
-  manualControls();
-  //printSensorValues();
-  lineFollow(1400, 1600);
+  //controllerLoop();
+  //manualControls();
+  printSensorValues();
+  lineFollow(sonarrMaxSpeedCalculation(frontSonarrValue()-3, 7),0,.5);
+
+  
   //driveForward(50);
   //Trans
   //reciverLoop();
@@ -525,58 +532,106 @@ double BasicCosineMotionProfile(double input, double scale)
 
 /* ------------------------------ Auto Actions ------------------------------ */
 
-//Gripper Commands
-void closeGripper()
+
+//Full Forward 1600, 1400
+void tankMovementNoMotionProfiling(double left, double right)
 {
+  
+
+servoLeft.writeMicroseconds(1500 + left);
+servoRight.writeMicroseconds(1500 - right); 
+
+
 }
 
-void openGripper()
-{
-}
-
-//Line Following
-void lineFollow(double maxSpeedRight, double maxSpeedLeft)
+void lineFollow(double maxSpeed, double ddelay, double mult)
 {
 
-  if (lineFollowLeftSensor() && !(lineFollowCenterSensor()) && !(lineFollowRightSensor()))
+  if(maxSpeed<8)
   {
-    servoLeftPositionValue=maxSpeedRight;
-    servoRightPositionValue=maxSpeedLeft-50;
+    tankMovementNoMotionProfiling(0,0);
+    gripperOpen();
+    delay(1000);
+    //TODO SWTICH TO MANUAL CONTROLS!!!!!!!!!!!!!!!!!
+  }
+
+  else if (lineFollowLeftSensor() && !(lineFollowCenterSensor()) && !(lineFollowRightSensor()))
+  {
+
+    tankMovementNoMotionProfiling(maxSpeed * mult, maxSpeed);
     Serial.println("I SHOULD BE TURNING LEFT HARD");
+    previousLineFollowState = left; 
+    delay(ddelay);
   }
   else if (!(lineFollowLeftSensor()) && lineFollowCenterSensor() && !(lineFollowRightSensor()))
   {
-    servoLeftPositionValue=(maxSpeedLeft);
-    servoRightPositionValue=(maxSpeedRight);
+    tankMovementNoMotionProfiling(maxSpeed, maxSpeed);
     Serial.println("I SHOULD BE GOING STRAIGHT");
+    previousLineFollowState = straight;
+    delay(ddelay);
   }
   else if (!(lineFollowLeftSensor()) && !(lineFollowCenterSensor()) && (lineFollowRightSensor()))
   {
-    servoLeftPositionValue=(maxSpeedLeft);
-    servoRightPositionValue=(maxSpeedRight - 50);
+    tankMovementNoMotionProfiling(maxSpeed, maxSpeed * mult);
     Serial.println("I SHOULD BE TURNING RIGHT HARD");
+    previousLineFollowState = right;
+    delay(ddelay);
   }
   else if ((lineFollowLeftSensor()) && (lineFollowCenterSensor()) && !(lineFollowRightSensor()))
   {
-    servoLeftPositionValue=(maxSpeedLeft - 25);
-    servoRightPositionValue=(maxSpeedRight);
+    
+    tankMovementNoMotionProfiling(maxSpeed * mult, maxSpeed);
     Serial.println("I SHOULD BE TURNING LEFT VERY VERY VERY LITTLE");
+    previousLineFollowState = left;
+    delay(ddelay);
+
   }
   else if (!(lineFollowLeftSensor()) && (lineFollowCenterSensor()) && (lineFollowRightSensor()))
   {
-    servoLeftPositionValue=(maxSpeedLeft);
-    servoRightPositionValue=(maxSpeedRight - 25);
+    tankMovementNoMotionProfiling(maxSpeed,maxSpeed * mult);
     Serial.println("I SHOULD BE TURNING RIGHT VERY VERY VERY LITTLE");
+    previousLineFollowState = right;
+    delay(ddelay);
   }
-  else if ((lineFollowLeftSensor()) && (lineFollowCenterSensor()) && (lineFollowRightSensor())){
+  else if ((lineFollowLeftSensor()) && (lineFollowCenterSensor()) && (lineFollowRightSensor()))
+  {
+    tankMovementNoMotionProfiling(0,0);
     Serial.println("I AM ACTUALLY FUCKING WORKING THIS IS THE ALL WHITE ONE");
+    delay(ddelay);
   }
   else
   {
-    /* code */
+
+    //ALL BLACK!!!!
+    if(   !((lineFollowLeftSensor()) && (lineFollowCenterSensor()) && (lineFollowRightSensor()))  )
+    {
+      //This breaks if they are not all black! 
+      
+    }
+    //This uses the previousLineFollowState to correct the wrong turn :( 
+    else
+    {
+      if(previousLineFollowState == left)
+      {
+        tankMovementNoMotionProfiling(50,0);
+      }
+      if(previousLineFollowState == right)
+      {
+        tankMovementNoMotionProfiling(0,50);
+      }
+      else
+      {
+
+      }
+    }
+    
+
   }
-  
 }
+
+
+
+
 
 //Drivetrain
 void driveForward(double power)
@@ -699,6 +754,21 @@ double sonarrValueInches(int pingPin)
   return pulseIn(pingPin, HIGH) / 74 / 2;
 
   delay(100);
+}
+
+double sonarrMaxSpeedCalculation(double distanceAway, double distanceToStop)
+{
+
+  if(((1/(distanceToStop * distanceToStop)) * 100 * distanceAway * distanceAway) < 100)
+  {
+    return ((1/(distanceToStop * distanceToStop)) * 100 * (distanceAway) * (distanceAway) );
+  }
+  else
+  {
+    return 100;
+  }
+  
+
 }
 
 /* -------------------------------------------------------------------------- */
