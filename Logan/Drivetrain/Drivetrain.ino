@@ -63,7 +63,7 @@ int frontSonarrPin = 6;
 int rightSonarrPin = 8;
 int leftSonarrPin = 7;
 
-double whiteLevel = 600;
+double whiteLevel = 500;
 double blackLevel = 0;
 
 /** This is the global value for the servo code
@@ -89,31 +89,41 @@ void setup()
   setupServos();
   gripperClose();
   controllerSetup();
- 
 }
 
 void loop()
 {
   controllerLoop();
-
-  
-
+  printSensorValues();
   switch (STATE)
   {
 
   case MANUAL:
+    
     manualControls();
     break;
 
   case AUTOLEFT:
-     autoLeftMode();
+    if (ps2x.ButtonPressed(PSB_BLUE))
+    {
+      STATE = MANUAL;
+    }
+    autoLeftMode();
     break;
 
   case AUTORIGHT:
+    if (ps2x.ButtonPressed(PSB_BLUE))
+    {
+      STATE = MANUAL;
+    }
     autoRightMode();
     break;
 
   case AUTOMIDDLE:
+    if (ps2x.ButtonPressed(PSB_BLUE))
+    {
+      STATE = MANUAL;
+    }
     autoMiddleMode();
 
     break;
@@ -588,25 +598,22 @@ void autoLeftMode()
 {
   closeGripperAutoAction();
   lineFollowUntilCenter();
-  spinLeft(800);
-  lineFollowAndDeliver(sonarrMaxSpeedCalculation(frontSonarrValue() - 3, 7), 0, .5);
-  
+  spinLeft(850);
+  lineFollowAndDeliver(sonarrMaxSpeedCalculation(frontSonarrValue() - 3, 5), 0, .5);
 }
 
 void autoRightMode()
 {
   closeGripperAutoAction();
   lineFollowUntilCenter();
-  spinRight(900);
-  lineFollowAndDeliver(sonarrMaxSpeedCalculation(frontSonarrValue() - 3, 7), 0, .5);
-  }
-
+  spinRight(850);
+  lineFollowAndDeliver(sonarrMaxSpeedCalculation(frontSonarrValue() - 3, 5), 0, .5);
+}
 
 void autoMiddleMode()
 {
   closeGripperAutoAction();
-  lineFollowAndDeliver(sonarrMaxSpeedCalculation(frontSonarrValue() - 3, 7), 0, .5);
-  
+  lineFollowAndDeliver(sonarrMaxSpeedCalculation(frontSonarrValue() - 3, 5), 0, .5);
 }
 
 /* ------------------------------ Auto Actions ------------------------------ */
@@ -626,10 +633,10 @@ void lineFollowAndDeliver(double maxSpeed, double ddelay, double mult)
   {
     tankMovementNoMotionProfiling(0, 0);
     gripperOpen();
-     autoActionComplete0 = false;
-     autoActionComplete1 = false;
-     autoActionComplete2 = false;
-     autoActionComplete3 = false;
+    autoActionComplete0 = false;
+    autoActionComplete1 = false;
+    autoActionComplete2 = false;
+    autoActionComplete3 = false;
     STATE = MANUAL;
     //TODO SWTICH TO MANUAL CONTROLS!!!!!!!!!!!!!!!!!
   }
@@ -718,10 +725,10 @@ void driveReverse(double power)
 
 void spinLeft(double time)
 {
-  
+
   double starttime = millis();
 
-  while(autoActionComplete2 == false)
+  while (autoActionComplete2 == false)
   {
     if (millis() >= time + starttime)
     {
@@ -732,16 +739,15 @@ void spinLeft(double time)
     {
       servoLeft.writeMicroseconds(1400);
       servoRight.writeMicroseconds(1400);
-    }    
+    }
   }
-  
 }
 
 void moveForwardTimeBased(double time)
 {
   double starttime = millis();
 
-  while(autoActionComplete1 == false)
+  while (autoActionComplete1 == false)
   {
     if (millis() >= time + starttime)
     {
@@ -750,8 +756,8 @@ void moveForwardTimeBased(double time)
     }
     else
     {
-      tankMovementNoMotionProfiling(100,100);
-    }    
+      tankMovementNoMotionProfiling(100, 100);
+    }
   }
 }
 
@@ -759,7 +765,7 @@ void spinRight(double time)
 {
   double starttime = millis();
 
-  while(autoActionComplete2 == false)
+  while (autoActionComplete2 == false)
   {
     if (millis() >= time + starttime)
     {
@@ -770,7 +776,7 @@ void spinRight(double time)
     {
       servoLeft.writeMicroseconds(1600);
       servoRight.writeMicroseconds(1600);
-    }    
+    }
   }
 }
 
@@ -782,7 +788,7 @@ void stop()
 
 void closeGripperAutoAction()
 {
-  while(autoActionComplete0 == false)
+  while (autoActionComplete0 == false)
   {
     gripperClose();
     delay(10);
@@ -790,21 +796,16 @@ void closeGripperAutoAction()
   }
 }
 
-  void openGripperAutoAction()
+void openGripperAutoAction()
 {
-    gripperOpen();
-    delay(10);
-     autoActionComplete0 = false;
-     autoActionComplete1 = false;
-     autoActionComplete2 = false;
-     autoActionComplete3 = false;
-    STATE = MANUAL;
-  }
-  
-
-
-  
-
+  gripperOpen();
+  delay(10);
+  autoActionComplete0 = false;
+  autoActionComplete1 = false;
+  autoActionComplete2 = false;
+  autoActionComplete3 = false;
+  STATE = MANUAL;
+}
 
 //Booleans
 boolean isInCenter()
@@ -866,28 +867,18 @@ boolean lineFollowCenterSensor()
 void lineFollowUntilCenter()
 {
 
-  while(autoActionComplete1 == false)
+  while (autoActionComplete1 == false)
   {
-    if( !((lineFollowLeftSensor()) && (lineFollowCenterSensor()) && (lineFollowRightSensor())) )
-  {
-    tankMovementNoMotionProfiling(100,100);
-    
+    if (!((lineFollowLeftSensor()) && (lineFollowCenterSensor()) && (lineFollowRightSensor())))
+    {
+      tankMovementNoMotionProfiling(100, 100);
+    }
+    else
+    {
+      tankDriveMovement(0, 0);
+      autoActionComplete1 = true;
+    }
   }
-  else
-  {
-    tankDriveMovement(0,0);
-    autoActionComplete1 = true;
-  }
-
-  }
-  
-  
-  
-  
-    
-    
-  
-  
 }
 
 /* ------------------------------ Sonarr Stuff ------------------------------ */
@@ -952,6 +943,14 @@ double sonarrMaxSpeedCalculation(double distanceAway, double distanceToStop)
 
 void printSensorValues()
 {
+  // Serial.println("normlisedLeftValue");
+  // Serial.println(normlisedLeftValue);
+
+  // Serial.println("normlisedRightValue");
+  // Serial.println(normlisedRightValue);
+
+  // Serial.println("normlisedMiddleValue");
+  // Serial.println(normlisedMiddleValue);
 
   //Serial.println(analogRead(middleLightSensorPin));
 
@@ -989,6 +988,101 @@ void printSensorValues()
   Serial.println("--------------------------------------");
   Serial.println("");
 }
+
+/* -------------------------------------------------------------------------- */
+/*                         Auto Calibrate Line Sensor                         */
+/* -------------------------------------------------------------------------- */
+
+/** This section of code does some funky weird auto calibartin stuff.
+ * It uses this forumla to normlize the line sensors into a precentage
+ * of white and black.
+ * 
+ * Normalised Value = 100.0 * (Reading – Minimum) / (Maximum – Minimum)
+ * 
+ * So this means we need to have a function that will store the min and 
+ * max values for each one of the sensors. This function will just run 
+ * in the background and store values to use later.
+ * 
+ * We can then modify the booleans that determine if the sensor is on 
+ * the white line to use this cool auto function!
+ */
+
+/* ---------------------------- Left Light Sensor --------------------------- */
+
+double leftLightMaxValue = 0;
+double leftLightMinValue = 0;
+
+void setLeftLightMaxAndMinValues()
+{
+  if (analogRead(leftLightSensorPin) > leftLightMaxValue)
+  {
+    leftLightMaxValue = analogRead(leftLightSensorPin);
+  }
+
+  if (analogRead(leftLightSensorPin) < leftLightMinValue)
+  {
+    leftLightMinValue = analogRead(leftLightSensorPin);
+  }
+}
+
+//Normalised Value = 100.0 * (Reading – Minimum) / (Maximum – Minimum)
+double normlisedLeftValue()
+{
+  return 100 * analogRead(leftLightSensorPin) / (leftLightMaxValue - leftLightMinValue);
+}
+/* -------------------------------------------------------------------------- */
+
+/* --------------------------- Right Light Sensor --------------------------- */
+
+double rightLightMaxValue = 0;
+double rightLightMinValue = 0;
+
+void setRightLightMaxAndMinValues()
+{
+  if (analogRead(rightLightSensorPin) > rightLightMaxValue)
+  {
+    rightLightMaxValue = analogRead(rightLightMaxValue);
+  }
+
+  if (analogRead(rightLightMinValue) < rightLightMinValue)
+  {
+    rightLightMinValue = analogRead(rightLightSensorPin);
+  }
+}
+
+double normlisedRightValue()
+{
+  return 100 * analogRead(rightLightSensorPin) / (rightLightMaxValue - rightLightMinValue);
+}
+/* -------------------------------------------------------------------------- */
+
+
+
+
+/* --------------------------- Middle Light Sensor -------------------------- */
+
+double middleLightMaxValue = 0;
+double middleLightMinValue = 0;
+
+void setMiddleLightMaxAndMinValues()
+{
+  if (analogRead(middleLightSensorPin) > rightLightMaxValue)
+  {
+    middleLightMaxValue = analogRead(middleLightSensorPin);
+  }
+
+  if (analogRead(middleLightSensorPin) < rightLightMinValue)
+  {
+    middleLightMinValue = analogRead(middleLightSensorPin);
+  }
+}
+
+double normlisedMiddleValue()
+{
+  return 100 * analogRead(middleLightSensorPin) / (middleLightMaxValue - middleLightMinValue);
+}
+
+/* -------------------------------------------------------------------------- */
 
 // /* -------------------------------------------------------------------------- */
 // /*                            Transmitter Functions                           */
