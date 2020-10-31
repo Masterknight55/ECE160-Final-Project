@@ -133,22 +133,6 @@ void loop()
   }
 }
 
-void testingShit()
-{
-  // put your main code here, to run repeatedly:
-  //controllerLoop();
-  //manualControls();
-  printSensorValues();
-  //lineFollow(sonarrMaxSpeedCalculation(frontSonarrValue()-3, 7),0,.5);
-
-  //driveForward(50);
-  //Trans
-  //reciverLoop();
-
-  //setServos();
-
-  printSensorValues();
-}
 
 /* -------------------------------------------------------------------------- */
 /*                                 Controller                                 */
@@ -489,62 +473,8 @@ void tankDriveMovement(double left, double right)
   }
 }
 
-/* ----------------------------- Drive Commands ----------------------------- */
-/** These are the different commands you can give the Robots drivetrain. 
- * These commands could be useful as auto actions for in the auto modes.
- */
-void driveTrainStop()
-{
-
-  double servoLeftPositionValue = 1500;
-  double servoRightPositionValue = 1500;
-}
-
-//Clockwise is forwards
-void driveTrainForward()
-{
-
-  double servoLeftPositionValue = 1400;
-  double servoRightPositionValue = 1600;
-}
-
-//Conuter clockwise is reverse
-void driveTrainReverse()
-{
-
-  double servoLeftPositionValue = 1700;
-  double servoRightPositionValue = 1300;
-}
-
-void driveTrainSpinLeft()
-{
-
-  double servoLeftPositionValue = 1700;
-  double servoRightPositionValue = 1700;
-}
-
-void driveTrainSpinRight()
-{
-
-  double servoLeftPositionValue = 1300;
-  double servoRightPositionValue = 1300;
-}
-
-void driveTrainTurnLeft()
-{
-
-  double servoLeftPositionValue = 1500;
-  double servoRightPositionValue = 1300;
-}
-
-void driveTrainTurnRight()
-{
-
-  double servoLeftPositionValue = 1700;
-  double servoRightPositionValue = 1500;
-}
-
 /* -------------------------------------------------------------------------- */
+
 
 /* ---------------------------- Gripper Commands ---------------------------- */
 /** This Section of code controls the different states of the servo */
@@ -621,7 +551,6 @@ void autoMiddleMode()
 //Full Forward 1600, 1400
 void tankMovementNoMotionProfiling(double left, double right)
 {
-
   servoLeft.writeMicroseconds(1500 + left);
   servoRight.writeMicroseconds(1500 - right);
 }
@@ -638,7 +567,6 @@ void lineFollowAndDeliver(double maxSpeed, double ddelay, double mult)
     autoActionComplete2 = false;
     autoActionComplete3 = false;
     STATE = MANUAL;
-    //TODO SWTICH TO MANUAL CONTROLS!!!!!!!!!!!!!!!!!
   }
 
   else if (lineFollowLeftSensor() && !(lineFollowCenterSensor()) && !(lineFollowRightSensor()))
@@ -710,18 +638,7 @@ void lineFollowAndDeliver(double maxSpeed, double ddelay, double mult)
   }
 }
 
-//Drivetrain
-void driveForward(double power)
-{
-  servoLeft.writeMicroseconds(1500 + power);
-  servoRight.writeMicroseconds(1500 - power);
-}
-
-void driveReverse(double power)
-{
-  servoLeft.writeMicroseconds(1500 - power);
-  servoRight.writeMicroseconds(1500 + power);
-}
+/* -------------------------- Drive Train Commands -------------------------- */
 
 void spinLeft(double time)
 {
@@ -739,24 +656,6 @@ void spinLeft(double time)
     {
       servoLeft.writeMicroseconds(1400);
       servoRight.writeMicroseconds(1400);
-    }
-  }
-}
-
-void moveForwardTimeBased(double time)
-{
-  double starttime = millis();
-
-  while (autoActionComplete1 == false)
-  {
-    if (millis() >= time + starttime)
-    {
-      stop();
-      autoActionComplete1 = true;
-    }
-    else
-    {
-      tankMovementNoMotionProfiling(100, 100);
     }
   }
 }
@@ -780,11 +679,47 @@ void spinRight(double time)
   }
 }
 
-void stop()
+void moveForwardTimeBased(double time)
 {
-  servoLeft.writeMicroseconds(1600);
-  servoRight.writeMicroseconds(1600);
+  double starttime = millis();
+
+  while (autoActionComplete1 == false)
+  {
+    if (millis() >= time + starttime)
+    {
+      stop();
+      autoActionComplete1 = true;
+    }
+    else
+    {
+      tankMovementNoMotionProfiling(100, 100);
+    }
+  }
 }
+/* -------------------------------------------------------------------------- */
+
+void delayAction(double time)
+{
+  double starttime = millis();
+
+  while (autoActionComplete1 == false)
+  {
+    if (millis() >= time + starttime)
+    {
+      stop();
+      autoActionComplete1 = true;
+    }
+    else
+    {
+      
+    }
+  }
+}
+
+
+
+
+
 
 void closeGripperAutoAction()
 {
@@ -824,10 +759,6 @@ boolean walltoRight()
 }
 
 //Line Following Booleans
-void lineFollowCalibrate()
-{
-}
-
 boolean lineFollowLeftSensor()
 {
   if (analogRead(leftLightSensorPin) <= whiteLevel)
