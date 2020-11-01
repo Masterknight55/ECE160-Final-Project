@@ -164,7 +164,7 @@ void manualControls()
   //driveTrainManualDrive(ps2x.Analog(PSS_LY), ps2x.Analog(PSS_RY));
   //ps2x.Analog(PSS_LY)
   //ps2x.Analog(PSS_RY)
-tankDriveMovementWithMotionProfiling(map(joystickDeadzoner(ps2x.Analog(PSS_LY),255,0,-100,100) ))
+  //tankDriveMovementWithMotionProfiling(map(ps2x.Analog(PSS_LY,255,0,-100,100),map(joystickDeadzoner(ps2x.Analog(PSS_RY),255,0,-100,100) ));
   driveTrainManualDrive(ps2x.Analog(PSS_LY), ps2x.Analog(PSS_RY));
 
   if (ps2x.Button(PSB_L2))
@@ -665,7 +665,7 @@ void lineFollowUntilCenter()
     }
     else
     {
-      tankDriveMovement(0, 0);
+      tankMovementNoMotionProfiling(0, 0);
       autoActionComplete1 = true;
     }
   }
