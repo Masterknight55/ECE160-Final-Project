@@ -46,6 +46,25 @@ PS2X ps2x;
 int STATE = MANUAL; // start in the IDLE state
 /* -------------------------------------------------------------------------- */
 
+<<<<<<< Updated upstream
+=======
+//int IRPin = 12;
+//IRrecv myIR(IRPin);
+//decode_results results;
+
+//Reciver Pins and stuff
+//NRFLite _radio;
+//unsigned long _data;
+
+//int x = 0;
+//int y = 0;
+//int button = 0;
+boolean autoActionComplete0 = false;
+boolean autoActionComplete1 = false;
+boolean autoActionComplete2 = false;
+boolean autoActionComplete3 = false;
+boolean autoActionComplete4 = false;
+>>>>>>> Stashed changes
 
 /* --------------------------------- Pinout --------------------------------- */
 const int servoLeftPin = 13;
@@ -549,22 +568,24 @@ void autoLeftMode()
 {
   closeGripperAutoAction();
   lineFollowUntilCenter();
-  spinLeft(850);
-  lineFollowAndDeliver(sonarrMaxSpeedCalculation(frontSonarrValue() - 3, 5), 0, .5);
+  spinLeft(750);
+  moveForwardTimeBased(150);
+  lineFollowAndDeliver(sonarrMaxSpeedCalculation(frontSonarrValue() - 3, 5), 0, .35);
 }
 
 void autoRightMode()
 {
   closeGripperAutoAction();
   lineFollowUntilCenter();
-  spinRight(850);
-  lineFollowAndDeliver(sonarrMaxSpeedCalculation(frontSonarrValue() - 3, 5), 0, .5);
+  spinRight(750);
+  moveForwardTimeBased(150);
+  lineFollowAndDeliver(sonarrMaxSpeedCalculation(frontSonarrValue() - 3, 5), 0, .35);
 }
 
 void autoMiddleMode()
 {
   closeGripperAutoAction();
-  lineFollowAndDeliver(sonarrMaxSpeedCalculation(frontSonarrValue() - 3, 5), 0, .5);
+  lineFollowAndDeliver(sonarrMaxSpeedCalculation(frontSonarrValue() - 3, 5), 0, .35);
 }
 
 /* ------------------------------ Auto Actions ------------------------------ */
@@ -582,6 +603,16 @@ void lineFollowAndDeliver(double maxSpeed, double ddelay, double mult)
   {
     tankMovementNoMotionProfiling(0, 0);
     gripperOpen();
+<<<<<<< Updated upstream
+=======
+    autoActionComplete0 = false;
+    autoActionComplete1 = false;
+    autoActionComplete2 = false;
+    autoActionComplete3 = false;
+    autoActionComplete4 = false;
+    STATE = MANUAL;
+    //TODO SWTICH TO MANUAL CONTROLS!!!!!!!!!!!!!!!!!
+>>>>>>> Stashed changes
   }
 
   else if (lineFollowLeftSensor() && !(lineFollowCenterSensor()) && !(lineFollowRightSensor()))
@@ -714,12 +745,12 @@ void moveForwardTimeBased(double time)
 {
   double starttime = millis();
 
-  while (autoActionComplete1 == false)
+  while (autoActionComplete4 == false)
   {
     if (millis() >= time + starttime)
     {
       stop();
-      autoActionComplete1 = true;
+      autoActionComplete4 = true;
     }
     else
     {
@@ -809,11 +840,41 @@ boolean lineFollowCenterSensor()
     return false;
   }
 }
+<<<<<<< Updated upstream
+=======
+
+void lineFollowUntilCenter()
+{
+
+  while (autoActionComplete1 == false)
+  {
+    if (!((lineFollowLeftSensor()) && (lineFollowCenterSensor()) && (lineFollowRightSensor())))
+    {
+      tankMovementNoMotionProfiling(50, 50);
+    }
+    else
+    {
+      tankDriveMovement(0, 0);
+      delay(100);
+      autoActionComplete1 = true;
+    }
+  }
+}
+
+>>>>>>> Stashed changes
 /* ------------------------------ Sonarr Stuff ------------------------------ */
 
 double frontSonarrValue()
 {
+  if(sonarrValueInches(frontSonarrPin) != 0)
+{
   return sonarrValueInches(frontSonarrPin);
+}
+else
+{
+  return 10;
+}
+  
 }
 double leftSonarrValue()
 {
@@ -907,3 +968,172 @@ void printSensorValues()
   Serial.println("");
 }
 
+<<<<<<< Updated upstream
+=======
+// /* -------------------------------------------------------------------------- */
+// /*                         Auto Calibrate Line Sensor                         */
+// /* -------------------------------------------------------------------------- */
+
+// /** This section of code does some funky weird auto calibartin stuff.
+//  * It uses this forumla to normlize the line sensors into a precentage
+//  * of white and black.
+//  * 
+//  * Normalised Value = 100.0 * (Reading – Minimum) / (Maximum – Minimum)
+//  * 
+//  * So this means we need to have a function that will store the min and 
+//  * max values for each one of the sensors. This function will just run 
+//  * in the background and store values to use later.
+//  * 
+//  * We can then modify the booleans that determine if the sensor is on 
+//  * the white line to use this cool auto function!
+//  */
+
+// /* ---------------------------- Left Light Sensor --------------------------- */
+
+// double leftLightMaxValue = 0;
+// double leftLightMinValue = 0;
+
+// void setLeftLightMaxAndMinValues()
+// {
+//   if (analogRead(leftLightSensorPin) > leftLightMaxValue)
+//   {
+//     leftLightMaxValue = analogRead(leftLightSensorPin);
+//   }
+
+//   if (analogRead(leftLightSensorPin) < leftLightMinValue)
+//   {
+//     leftLightMinValue = analogRead(leftLightSensorPin);
+//   }
+// }
+
+// //Normalised Value = 100.0 * (Reading – Minimum) / (Maximum – Minimum)
+// double normlisedLeftValue()
+// {
+//   return 100 * analogRead(leftLightSensorPin) / (leftLightMaxValue - leftLightMinValue);
+// }
+// /* -------------------------------------------------------------------------- */
+
+// /* --------------------------- Right Light Sensor --------------------------- */
+
+// double rightLightMaxValue = 0;
+// double rightLightMinValue = 0;
+
+// void setRightLightMaxAndMinValues()
+// {
+//   if (analogRead(rightLightSensorPin) > rightLightMaxValue)
+//   {
+//     rightLightMaxValue = analogRead(rightLightMaxValue);
+//   }
+
+//   if (analogRead(rightLightMinValue) < rightLightMinValue)
+//   {
+//     rightLightMinValue = analogRead(rightLightSensorPin);
+//   }
+// }
+
+// double normlisedRightValue()
+// {
+//   return 100 * analogRead(rightLightSensorPin) / (rightLightMaxValue - rightLightMinValue);
+// }
+// /* -------------------------------------------------------------------------- */
+
+
+
+
+// /* --------------------------- Middle Light Sensor -------------------------- */
+
+// double middleLightMaxValue = 0;
+// double middleLightMinValue = 0;
+
+// void setMiddleLightMaxAndMinValues()
+// {
+//   if (analogRead(middleLightSensorPin) > rightLightMaxValue)
+//   {
+//     middleLightMaxValue = analogRead(middleLightSensorPin);
+//   }
+
+//   if (analogRead(middleLightSensorPin) < rightLightMinValue)
+//   {
+//     middleLightMinValue = analogRead(middleLightSensorPin);
+//   }
+// }
+
+// double normlisedMiddleValue()
+// {
+//   return 100 * analogRead(middleLightSensorPin) / (middleLightMaxValue - middleLightMinValue);
+// }
+
+// /* -------------------------------------------------------------------------- */
+
+// // /* -------------------------------------------------------------------------- */
+// // /*                            Transmitter Functions                           */
+// // /* -------------------------------------------------------------------------- */
+
+// // void reciverSetup()
+// // {
+// //   Serial.begin(115200);
+// // _radio.init(3, 9, 10); // Set this radio's Id = 1, along with its CE and CSN pins
+// // }
+
+// // void reciverLoop()
+// // {
+// // while (_radio.hasData())
+// //     {
+// //         _radio.readData(&_data);
+
+// //         x = (_data & 2095104)>>11;
+
+// //         y = (_data & 2046)>>1;
+
+// //         button = _data & 1;
+
+// //         Serial.println(_data,BIN);
+// //         //Serial.println("X Axis:");
+// //         Serial.println(x);
+// //         //Serial.println("Y Axis:");
+// //         Serial.println(y);
+// //         Serial.println(button);
+
+// //   if(button == 1)
+// //   {
+// //     //180 closed
+// //     servoGripper.write(180);
+
+// //   }
+// //   else
+// //   {
+// //     //90
+// //     servoGripper.write(90);
+
+// //   }
+
+// //   if(x > 40)
+// //   {
+// //     servoLeft.writeMicroseconds(1700);
+// //     servoRight.writeMicroseconds(1300);
+// //   }
+// //   else if((x < 40) && (x > 5))
+// //   {
+// //     servoLeft.writeMicroseconds(1300);
+// //     servoRight.writeMicroseconds(1700);
+// //   }
+// //   else if(y > 530)
+// //   {
+// //     servoLeft.writeMicroseconds(1700);
+// //     servoRight.writeMicroseconds(1700);
+// //   }
+// //   else if(y < 520)
+// //   {
+// //     servoLeft.writeMicroseconds(1300);
+// //     servoRight.writeMicroseconds(1300);
+// //   }
+// //   else
+// //   {
+// //     servoLeft.writeMicroseconds(1500);
+// //     servoRight.writeMicroseconds(1500);
+// //   }
+
+// //     }
+
+// // }
+>>>>>>> Stashed changes
