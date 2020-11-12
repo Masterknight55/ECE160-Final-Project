@@ -507,10 +507,8 @@ void tankDriveMovement(double left, double right)
   }
 }
 
-/* ----------------------------- Drive Commands ----------------------------- */
-/** These are the different commands you can give the Robots drivetrain. 
- * These commands could be useful as auto actions for in the auto modes.
- */
+/* -------------------------- Drive Train Commands -------------------------- */
+//This method simply stops the drive train.
 void driveTrainStop()
 {
 
@@ -518,54 +516,12 @@ void driveTrainStop()
   double servoRightPositionValue = 1500;
 }
 
-//Clockwise is forwards
-void driveTrainForward()
-{
-
-  double servoLeftPositionValue = 1400;
-  double servoRightPositionValue = 1600;
-}
-
-//Conuter clockwise is reverse
-void driveTrainReverse()
-{
-
-  double servoLeftPositionValue = 1700;
-  double servoRightPositionValue = 1300;
-}
-
-void driveTrainSpinLeft()
-{
-
-  double servoLeftPositionValue = 1700;
-  double servoRightPositionValue = 1700;
-}
-
-void driveTrainSpinRight()
-{
-
-  double servoLeftPositionValue = 1300;
-  double servoRightPositionValue = 1300;
-}
-
-void driveTrainTurnLeft()
-{
-
-  double servoLeftPositionValue = 1500;
-  double servoRightPositionValue = 1300;
-}
-
-void driveTrainTurnRight()
-{
-
-  double servoLeftPositionValue = 1700;
-  double servoRightPositionValue = 1500;
-}
-
 /* -------------------------------------------------------------------------- */
 
 /* ---------------------------- Gripper Commands ---------------------------- */
-/** This Section of code controls the different states of the servo */
+/** This section of code writes different angle values to the gripper
+ * servo inturn moving the gripper.
+ */
 void gripperClose()
 {
   servoGripper.write(180);
@@ -584,10 +540,77 @@ void gripperOpen()
 /* -------------------------------------------------------------------------- */
 
 /* ----------------------------- Motion Profile ----------------------------- */
+
+                                                                                
+/* ---------------------------------- Graph --------------------------------- */
+
+/** This double takes in a x value (input) and returns a y value (output) 
+ * according to a cosine curve as seen below in the graph. This is used as 
+ * a filter between the analog input from the controller and the power 
+ * applied to the motors. So when it is driven correctly it will reduce 
+ * jerk on the motors and allow it to be easier to control with slight 
+ * adjustments. **/
+
+/**
+ * Equation for the graph below 
+ * y = 2 * (cos(x + 3.14) + 1)) **/ 
+
+/** The Y axis is the power to the motor and the x axis is the controller input**/
+
+// @&                                                                              
+// @&                                                                              
+// @&                                                                              
+// @&                                                                        .@@
+// @&                                                                    @@@       
+// @&                                                                .@@.          
+// @&                                                              @@(             
+// @&                                                            @@                
+// @&                                                          @@                  
+// @&                                                        @@                    
+// @&                                                      %@@                     
+// @&                                                     @@                       
+// @&                                                   @@(                        
+// @&                                                  @@                          
+// @&                                                (@@                           
+// @&                                               @@                             
+// @&                                              @@                              
+// @&                                            %@%                               
+// @&                                           @@                                 
+// @&                                          @@                                  
+// @&                                         @@                                   
+// @&                                       @@(                                    
+// @&                                      @@                                      
+// @&                                     @@                                       
+// @&                                    @@                                        
+// @&                                  @@*                                         
+// @&                                 @@                                           
+// @&                                @@                                            
+// @&                              ,@@                                             
+// @&                             @@                                               
+// @&                            @@                                                
+// @&                           @@                                                 
+// @&                         @@                                                   
+// @&                        @@                                                    
+// @&                      @@#                                                     
+// @&                     @@                                                       
+// @&                   @@,                                                        
+// @&                 *@@                                                          
+// @&                @@                                                            
+// @&              @@                                                              
+// @&           /@@                                                                
+// @&         @@/                                                                  
+// @&     @@@(                                                                     
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+/* -------------------------------------------------------------------------- */
+
 double BasicCosineMotionProfile(double input, double scale)
 {
   if (input < 0)
   {
+    /** This section accounts for negative values and returns
+     * the value multiplied by -1**/
+
     return -1 * (2 * (cos(input * scale + 3.14) + 1));
   }
   if (input > 0)
@@ -605,19 +628,24 @@ double BasicCosineMotionProfile(double input, double scale)
 /*                                 Auto Stuff                                 */
 /* -------------------------------------------------------------------------- */
 /**
- * This sectino of code is for all of the auto stuff. There are modes for 
- * the different delivery options and there are actions for the different 
- * actions the robot can do.  
- * **/
+ * This section is all of the auto modes and actions
+ * 
+ **/
 
 /* ------------------------------- Auto Modes ------------------------------- */
+
+/** Auto Modes are sets of auto actions that run in sequence. 
+ * For example the left mode closes the gripper, line follows, spins, and then 
+ * delivers the object. This are ran in the main state machine.
+ * 
+ * By making auto modes like this you can easily add different modes and
+ * it would make it a lot easier to make fully auto if wanted **/
 
 void autoLeftMode()
 {
   closeGripperAutoAction();
   lineFollowUntilCenter();
   spinLeft(900);
-  
   lineFollowAndDeliver(sonarrMaxSpeedCalculation(frontSonarrValue(), 5), 0, .5,.6);
 }
 
@@ -636,6 +664,49 @@ void autoMiddleMode()
 }
 
 /* ------------------------------ Auto Actions ------------------------------ */
+
+/** This section contains all of the different auto actions. By making auto 
+ * actions we can both abstract directly controlling functions and reuse them
+ * as we see fit. **/
+
+/* ------------------------ Basic Auto Action Outline ----------------------- */
+
+/**
+ * This is a simple outline of how the auto actions work. I used the move 
+ * forward action as an example.
+ **/
+
+//Method name and the parmaters of the action. Such as time
+void moveForwardTimeBased(double time)
+{
+
+  /**This gets the start time of the function by referencing 
+   * the system timestamp storing is a temp variable **/
+  double starttime = millis();
+
+
+/** This loop keeps running the action until it is complete 
+ * by checking a boolean that is set to true when the action 
+ * is complete  **/
+  while (autoActionComplete1 == false)
+  {
+    if (millis() >= time + starttime)
+    {
+      stop();
+      //This is the boolean that is referenced above 
+      //At this point the action is complete
+      autoActionComplete1 = true;
+    }
+    else
+    {
+      //This is where the action will run until complete
+      tankMovementNoMotionProfiling(100, 100);
+    }
+  }
+}
+ 
+/* -------------------------------------------------------------------------- */
+
 
 //Full Forward 1600, 1400
 void tankMovementNoMotionProfiling(double left, double right)
@@ -700,7 +771,7 @@ void lineFollowAndDeliver(double maxSpeed, double ddelay, double mult,double mul
   else if ((lineFollowLeftSensor()) && (lineFollowCenterSensor()) && (lineFollowRightSensor()))
   {
     tankMovementNoMotionProfiling(20, 20);
-    Serial.println("I AM ACTUALLY FUCKING WORKING THIS IS THE ALL WHITE ONE");
+    Serial.println("THIS IS THE ALL WHITE ONE");
     delay(ddelay);
   }
   else
@@ -762,23 +833,7 @@ void spinLeft(double time)
   }
 }
 
-void moveForwardTimeBased(double time)
-{
-  double starttime = millis();
 
-  while (autoActionComplete1 == false)
-  {
-    if (millis() >= time + starttime)
-    {
-      stop();
-      autoActionComplete1 = true;
-    }
-    else
-    {
-      tankMovementNoMotionProfiling(100, 100);
-    }
-  }
-}
 
 void spinRight(double time)
 {
@@ -825,6 +880,8 @@ void openGripperAutoAction()
   autoActionComplete3 = false;
   STATE = MANUAL;
 }
+/* -------------------------------------------------------------------------- */
+
 
 //Booleans
 boolean isInCenter()
@@ -971,17 +1028,7 @@ double sonarrMaxSpeedCalculation(double distanceAway, double distanceToStop)
 
 void printSensorValues()
 {
-  // Serial.println("normlisedLeftValue");
-  // Serial.println(normlisedLeftValue);
-
-  // Serial.println("normlisedRightValue");
-  // Serial.println(normlisedRightValue);
-
-  // Serial.println("normlisedMiddleValue");
-  // Serial.println(normlisedMiddleValue);
-
-  //Serial.println(analogRead(middleLightSensorPin));
-
+  
   Serial.print("| Middle Sensor: ");
   Serial.print(analogRead(middleLightSensorPin));
   Serial.println("");
@@ -1110,76 +1157,3 @@ double normlisedMiddleValue()
   return 100 * analogRead(middleLightSensorPin) / (middleLightMaxValue - middleLightMinValue);
 }
 
-/* -------------------------------------------------------------------------- */
-
-// /* -------------------------------------------------------------------------- */
-// /*                            Transmitter Functions                           */
-// /* -------------------------------------------------------------------------- */
-
-// void reciverSetup()
-// {
-//   Serial.begin(115200);
-// _radio.init(3, 9, 10); // Set this radio's Id = 1, along with its CE and CSN pins
-// }
-
-// void reciverLoop()
-// {
-// while (_radio.hasData())
-//     {
-//         _radio.readData(&_data);
-
-//         x = (_data & 2095104)>>11;
-
-//         y = (_data & 2046)>>1;
-
-//         button = _data & 1;
-
-//         Serial.println(_data,BIN);
-//         //Serial.println("X Axis:");
-//         Serial.println(x);
-//         //Serial.println("Y Axis:");
-//         Serial.println(y);
-//         Serial.println(button);
-
-//   if(button == 1)
-//   {
-//     //180 closed
-//     servoGripper.write(180);
-
-//   }
-//   else
-//   {
-//     //90
-//     servoGripper.write(90);
-
-//   }
-
-//   if(x > 40)
-//   {
-//     servoLeft.writeMicroseconds(1700);
-//     servoRight.writeMicroseconds(1300);
-//   }
-//   else if((x < 40) && (x > 5))
-//   {
-//     servoLeft.writeMicroseconds(1300);
-//     servoRight.writeMicroseconds(1700);
-//   }
-//   else if(y > 530)
-//   {
-//     servoLeft.writeMicroseconds(1700);
-//     servoRight.writeMicroseconds(1700);
-//   }
-//   else if(y < 520)
-//   {
-//     servoLeft.writeMicroseconds(1300);
-//     servoRight.writeMicroseconds(1300);
-//   }
-//   else
-//   {
-//     servoLeft.writeMicroseconds(1500);
-//     servoRight.writeMicroseconds(1500);
-//   }
-
-//     }
-
-// }
