@@ -46,6 +46,22 @@ PS2X ps2x;
 int STATE = MANUAL; // start in the IDLE state
 /* -------------------------------------------------------------------------- */
 
+//int IRPin = 12;
+//IRrecv myIR(IRPin);
+//decode_results results;
+
+//Reciver Pins and stuff
+//NRFLite _radio;
+//unsigned long _data;
+
+//int x = 0;
+//int y = 0;
+//int button = 0;
+boolean autoActionComplete0 = false;
+boolean autoActionComplete1 = false;
+boolean autoActionComplete2 = false;
+boolean autoActionComplete3 = false;
+boolean autoActionComplete4 = false;
 
 /* --------------------------------- Pinout --------------------------------- */
 const int servoLeftPin = 13;
@@ -164,7 +180,11 @@ void manualControls()
   //driveTrainManualDrive(ps2x.Analog(PSS_LY), ps2x.Analog(PSS_RY));
   //ps2x.Analog(PSS_LY)
   //ps2x.Analog(PSS_RY)
+<<<<<<< Updated upstream
   //tankDriveMovementWithMotionProfiling(map(ps2x.Analog(PSS_LY,255,0,-100,100),map(joystickDeadzoner(ps2x.Analog(PSS_RY),255,0,-100,100) ));
+=======
+//tankDriveMovementWithMotionProfiling(map(joystickDeadzoner(ps2x.Analog(PSS_LY),255,0,-100,100) ))
+>>>>>>> Stashed changes
   driveTrainManualDrive(ps2x.Analog(PSS_LY), ps2x.Analog(PSS_RY));
 
   if (ps2x.Button(PSB_L2))
@@ -549,22 +569,24 @@ void autoLeftMode()
 {
   closeGripperAutoAction();
   lineFollowUntilCenter();
-  spinLeft(850);
-  lineFollowAndDeliver(sonarrMaxSpeedCalculation(frontSonarrValue() - 3, 5), 0, .5);
+  spinLeft(750);
+  moveForwardTimeBased(150);
+  lineFollowAndDeliver(sonarrMaxSpeedCalculation(frontSonarrValue() - 3, 5), 0, .35);
 }
 
 void autoRightMode()
 {
   closeGripperAutoAction();
   lineFollowUntilCenter();
-  spinRight(850);
-  lineFollowAndDeliver(sonarrMaxSpeedCalculation(frontSonarrValue() - 3, 5), 0, .5);
+  spinRight(750);
+  moveForwardTimeBased(150);
+  lineFollowAndDeliver(sonarrMaxSpeedCalculation(frontSonarrValue() - 3, 5), 0, .35);
 }
 
 void autoMiddleMode()
 {
   closeGripperAutoAction();
-  lineFollowAndDeliver(sonarrMaxSpeedCalculation(frontSonarrValue() - 3, 5), 0, .5);
+  lineFollowAndDeliver(sonarrMaxSpeedCalculation(frontSonarrValue() - 3, 5), 0, .35);
 }
 
 /* ------------------------------ Auto Actions ------------------------------ */
@@ -582,6 +604,13 @@ void lineFollowAndDeliver(double maxSpeed, double ddelay, double mult)
   {
     tankMovementNoMotionProfiling(0, 0);
     gripperOpen();
+    autoActionComplete0 = false;
+    autoActionComplete1 = false;
+    autoActionComplete2 = false;
+    autoActionComplete3 = false;
+    autoActionComplete4 = false;
+    STATE = MANUAL;
+    //TODO SWTICH TO MANUAL CONTROLS!!!!!!!!!!!!!!!!!
   }
 
   else if (lineFollowLeftSensor() && !(lineFollowCenterSensor()) && !(lineFollowRightSensor()))
@@ -661,7 +690,7 @@ void lineFollowUntilCenter()
   {
     if (!((lineFollowLeftSensor()) && (lineFollowCenterSensor()) && (lineFollowRightSensor())))
     {
-      tankMovementNoMotionProfiling(100, 100);
+      tankMovementNoMotionProfiling(50, 50);
     }
     else
     {
@@ -714,12 +743,12 @@ void moveForwardTimeBased(double time)
 {
   double starttime = millis();
 
-  while (autoActionComplete1 == false)
+  while (autoActionComplete4 == false)
   {
     if (millis() >= time + starttime)
     {
       stop();
-      autoActionComplete1 = true;
+      autoActionComplete4 = true;
     }
     else
     {
@@ -809,11 +838,22 @@ boolean lineFollowCenterSensor()
     return false;
   }
 }
+
+
+
 /* ------------------------------ Sonarr Stuff ------------------------------ */
 
 double frontSonarrValue()
 {
+  if(sonarrValueInches(frontSonarrPin) != 0)
+{
   return sonarrValueInches(frontSonarrPin);
+}
+else
+{
+  return 10;
+}
+  
 }
 double leftSonarrValue()
 {
@@ -907,3 +947,50 @@ void printSensorValues()
   Serial.println("");
 }
 
+double tempValue = 0;
+
+void getRidOfSonarShit(double sonarrValue)
+{
+
+tempValue = frontSonarrValue();
+
+
+}
+
+//Not sure why this exists
+// void lineFollowUntilCenter()
+// {
+
+//   while (autoActionComplete1 == false)
+//   {
+//     if (!((lineFollowLeftSensor()) && (lineFollowCenterSensor()) && (lineFollowRightSensor())))
+//     {
+//       tankMovementNoMotionProfiling(50, 50);
+//     }
+//     else
+//     {
+//       tankDriveMovement(0, 0);
+//       delay(100);
+//       autoActionComplete1 = true;
+//     }
+//   }
+// }
+
+#define S1 A0    //analog0
+  float a,b,c,x1, sonar1;
+
+  sonar1 = analogRead(S1);
+
+  //convert the ADC reading to cm with y = mx+b
+  //the values of m and b come from characterizing the sonar
+  float x1 =  (sonar1+1.3496732)/.79924503;
+
+  //filter the spikes
+  if(fabs(x1-a)<40) a=x1;
+
+  //now we move the other set of 2 values to average
+  c=b;
+  b=a;
+ 
+  // perform a 50% lowpass filtering + averaging
+  filtered = .5*filtered + .5*(a+b+c)/3;
