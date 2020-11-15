@@ -1,3 +1,55 @@
+/* -------------------------------------------------------------------------- */
+/*                         Different Breed Final Code                         */
+/* -------------------------------------------------------------------------- */
+/** 
+ * DifferentBreed_FinalCode.ino
+ * Logan Manthey 
+ * 11/15/20 
+ * 
+ * The following code controls a customizable BOEBot which competed in the 
+ * Golden Goose Gala challenge. The code is split into 2 main sections 
+ * Auto modes and Manual controls. Durring Auto the code allows the 
+ * robot to deliver targets to the desginated location specified by 
+ * the mode and durring the manual mode the robot is controlled by a 
+ * PS2 Controller. 
+ * 
+ * Main Functions
+ * 
+ *  Setup Functions
+ *    The code uses different functions for each piece of hardware such as 
+ *    the controller, and the servos.
+ * 
+ *  Control Functions
+ *    Control Functions take in the sensor input and convert them into 
+ *    drivetrain movement. For example the manual control function 
+ *    which takes in values from the controller and then makes the 
+ *   drive train move depending on them. 
+ * 
+ *  Calculation Functions
+ *    Calculation functions return a double or boolean after taking in 
+ *    parameters. For example there is a function which returns a motor
+ *    value for the drive train with a given distance value. 
+ * 
+ *   Auto Actions
+ *    These functions use auto booleans to make them only run once. These
+ *    actions include opening the gripper and driving with a given parameter
+ *    such as time.
+ *  
+ * Main Variables 
+ *  The main variables used throughout the code include a pinout, auto 
+ *  action booleans, and sensor values. 
+ * 
+ * Summary of Hardware used
+ *  1 PlayStation Controller receiver and controller 
+ *  1 Infrared LED
+ *  1 RobotShop Line Following Sensor
+ *  1 Sonar Sensor
+ *  1 BOEBot Base
+ * 
+ */
+/* -------------------------------------------------------------------------- */
+
+
 /* --------------------------------- Imports -------------------------------- */
 
 #include <Servo.h>
@@ -709,12 +761,31 @@ void moveForwardTimeBased(double time)
 
 
 //Full Forward 1600, 1400
+/** This function takes in parameters for moving the left and the right servos
+ * based off a range of -100 to 100. -100 is full backwards and 100 is full
+ * forwards.  
+ */
 void tankMovementNoMotionProfiling(double left, double right)
 {
 
   servoLeft.writeMicroseconds(1500 + left);
   servoRight.writeMicroseconds(1500 - right);
 }
+
+/* --------------------------- Line Follow Actions -------------------------- */
+
+/** This is the most complex auto action. This action follows a line 
+ * and slows down as it gets closer to a wall. It will also deliver an
+ * object once it is in a certian range of the wall. 
+ * 
+ * The reasoning behind the max speed parameter is that to follow 
+ * the line we would slow down each one of the wheels a little bit
+ * rather than the other way around. This would allow us to mantian 
+ * max speed while following the line. This max speed is then adjusted
+ * once it is a certian range of the wall as seen below on the graph.
+ * 
+ * 
+ */
 
 void lineFollowAndDeliver(double maxSpeed, double ddelay, double mult,double multBig)
 {
@@ -728,7 +799,7 @@ void lineFollowAndDeliver(double maxSpeed, double ddelay, double mult,double mul
     autoActionComplete2 = false;
     autoActionComplete3 = false;
     STATE = MANUAL;
-    //TODO SWTICH TO MANUAL CONTROLS!!!!!!!!!!!!!!!!!
+    
   }
 
   else if (lineFollowLeftSensor() && !(lineFollowCenterSensor()) && !(lineFollowRightSensor()))
@@ -782,7 +853,7 @@ void lineFollowAndDeliver(double maxSpeed, double ddelay, double mult,double mul
     {
       //This breaks if they are not all black!
     }
-    //This uses the previousLineFollowState to correct the wrong turn :(
+    //This uses the previousLineFollowState to correct the wrong turn 
     else
     {
       if (previousLineFollowState == left)
@@ -799,6 +870,30 @@ void lineFollowAndDeliver(double maxSpeed, double ddelay, double mult,double mul
     }
   }
 }
+
+/** This action wil follow the line until the robot reaches the center point 
+ * during auto and then it will stop. 
+ */
+
+void lineFollowUntilCenter()
+{
+
+  while (autoActionComplete1 == false)
+  {
+    if (!((lineFollowLeftSensor()) && (lineFollowCenterSensor()) && (lineFollowRightSensor())))
+    {
+      tankMovementNoMotionProfiling(50, 50);
+    }
+    else
+    {
+      tankDriveMovement(0, 0);
+      autoActionComplete1 = true;
+    }
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+
 
 //Drivetrain
 void driveForward(double power)
@@ -860,6 +955,8 @@ void stop()
   servoRight.writeMicroseconds(1500);
 }
 
+/* ----------------------------- Gripper Actions ---------------------------- */
+
 void closeGripperAutoAction()
 {
   while (autoActionComplete0 == false)
@@ -880,29 +977,34 @@ void openGripperAutoAction()
   autoActionComplete3 = false;
   STATE = MANUAL;
 }
+
 /* -------------------------------------------------------------------------- */
 
 
-//Booleans
-boolean isInCenter()
-{
-  return false;
-}
 
-boolean wallToLeft()
-{
-  return false;
-}
 
-boolean walltoRight()
+void resetAutoBooleans()
 {
-  return false;
+    autoActionComplete0 = false;
+    autoActionComplete1 = false;
+    autoActionComplete2 = false;
+    autoActionComplete3 = false;
 }
+/* -------------------------------------------------------------------------- */
 
-//Line Following Booleans
-void lineFollowCalibrate()
-{
-}
+
+/* -------------------------------------------------------------------------- */
+/*                         Line Follow Sensor Booleans                        */
+/* -------------------------------------------------------------------------- */
+
+/** These booleans allow us to adjust how sensitive the line following sensors
+ * are in this location rather than above in the different auto actions. 
+ * 
+ * We were going to auto calibrate the light sensors by normalizing the 
+ * sensor feedback into a precentage but we found the white value and black 
+ * value to be different enough (White was 300 and black was 900) that 
+ * it wasn't necessary. 
+ */
 
 boolean lineFollowLeftSensor()
 {
@@ -940,33 +1042,9 @@ boolean lineFollowCenterSensor()
   }
 }
 
-void lineFollowUntilCenter()
-{
-
-  while (autoActionComplete1 == false)
-  {
-    if (!((lineFollowLeftSensor()) && (lineFollowCenterSensor()) && (lineFollowRightSensor())))
-    {
-      tankMovementNoMotionProfiling(50, 50);
-    }
-    else
-    {
-      tankDriveMovement(0, 0);
-      autoActionComplete1 = true;
-    }
-  }
-}
-
-
-void resetAutoBooleans()
-{
-    autoActionComplete0 = false;
-    autoActionComplete1 = false;
-    autoActionComplete2 = false;
-    autoActionComplete3 = false;
-}
-
-/* ------------------------------ Sonarr Stuff ------------------------------ */
+/* -------------------------------------------------------------------------- */
+/*                            Sonar Sensor Methods                            */
+/* -------------------------------------------------------------------------- */
 
 double frontSonarrValue()
 {
@@ -1007,6 +1085,55 @@ double sonarrValueInches(int pingPin)
   delay(100);
 }
 
+/** This function will convert the distance away from the wall into a power
+ * value for a motor between 0 and 100 given a distance to stop. It does this 
+ * expontilly once the distance to stop has been reached. See below for a 
+ * example graph of this where the x axis is the distance from the wall 
+ * and the y is the motor power
+ */
+
+// @@                                                                              
+// @@                                                                              
+// @@                                                                              
+// @@                    ,@@@&&@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+// @@                    @@@                                                       
+// @@                   .@@@                                                       
+// @@                   @@@.                                                       
+// @@                   @@@                                                        
+// @@                  (@@(                                                        
+// @@                  @@@                                                         
+// @@                  @@@                                                         
+// @@                 @@@%                                                         
+// @@                 @@@                                                          
+// @@                .@@@                                                          
+// @@                @@@,                                                          
+// @@                @@@                                                           
+// @@               (@@(                                                           
+// @@               @@@                                                            
+// @@              ,@@&                                                            
+// @@              @@@.                                                            
+// @@             .@@@                                                             
+// @@             @@@,                                                             
+// @@            .@@@                                                              
+// @@            @@@,                                                              
+// @@           .@@@                                                               
+// @@           @@@.                                                               
+// @@          ,@@@                                                                
+// @@          @@@                                                                 
+// @@         (@@%                                                                 
+// @@         @@@                                                                  
+// @@        @@@,                                                                  
+// @@       #@@@                                                                   
+// @@       @@@                                                                    
+// @@      @@@                                                                     
+// @@     @@@,                                                                     
+// @@    @@@(                                                                      
+// @@   @@@(                                                                       
+// @@  @@@.                                                                        
+// @@@@@@                                                                          
+// @@@@&%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 double sonarrMaxSpeedCalculation(double distanceAway, double distanceToStop)
 {
 
@@ -1026,6 +1153,9 @@ double sonarrMaxSpeedCalculation(double distanceAway, double distanceToStop)
 /*                               Sensor Values!                               */
 /* -------------------------------------------------------------------------- */
 
+/** This section of code prints off the various sensor values on the robot. 
+ * We used this method to debug code.
+ */
 void printSensorValues()
 {
   
@@ -1063,97 +1193,5 @@ void printSensorValues()
   Serial.println("--------------------------------------");
   Serial.println("");
 }
-
-/* -------------------------------------------------------------------------- */
-/*                         Auto Calibrate Line Sensor                         */
-/* -------------------------------------------------------------------------- */
-
-/** This section of code does some funky weird auto calibartin stuff.
- * It uses this forumla to normlize the line sensors into a precentage
- * of white and black.
- * 
- * Normalised Value = 100.0 * (Reading – Minimum) / (Maximum – Minimum)
- * 
- * So this means we need to have a function that will store the min and 
- * max values for each one of the sensors. This function will just run 
- * in the background and store values to use later.
- * 
- * We can then modify the booleans that determine if the sensor is on 
- * the white line to use this cool auto function!
- */
-
-/* ---------------------------- Left Light Sensor --------------------------- */
-
-double leftLightMaxValue = 0;
-double leftLightMinValue = 0;
-
-void setLeftLightMaxAndMinValues()
-{
-  if (analogRead(leftLightSensorPin) > leftLightMaxValue)
-  {
-    leftLightMaxValue = analogRead(leftLightSensorPin);
-  }
-
-  if (analogRead(leftLightSensorPin) < leftLightMinValue)
-  {
-    leftLightMinValue = analogRead(leftLightSensorPin);
-  }
-}
-
-//Normalised Value = 100.0 * (Reading – Minimum) / (Maximum – Minimum)
-double normlisedLeftValue()
-{
-  return 100 * analogRead(leftLightSensorPin) / (leftLightMaxValue - leftLightMinValue);
-}
-/* -------------------------------------------------------------------------- */
-
-/* --------------------------- Right Light Sensor --------------------------- */
-
-double rightLightMaxValue = 0;
-double rightLightMinValue = 0;
-
-void setRightLightMaxAndMinValues()
-{
-  if (analogRead(rightLightSensorPin) > rightLightMaxValue)
-  {
-    rightLightMaxValue = analogRead(rightLightMaxValue);
-  }
-
-  if (analogRead(rightLightMinValue) < rightLightMinValue)
-  {
-    rightLightMinValue = analogRead(rightLightSensorPin);
-  }
-}
-
-double normlisedRightValue()
-{
-  return 100 * analogRead(rightLightSensorPin) / (rightLightMaxValue - rightLightMinValue);
-}
-/* -------------------------------------------------------------------------- */
-
-
-
-
-/* --------------------------- Middle Light Sensor -------------------------- */
-
-double middleLightMaxValue = 0;
-double middleLightMinValue = 0;
-
-void setMiddleLightMaxAndMinValues()
-{
-  if (analogRead(middleLightSensorPin) > rightLightMaxValue)
-  {
-    middleLightMaxValue = analogRead(middleLightSensorPin);
-  }
-
-  if (analogRead(middleLightSensorPin) < rightLightMinValue)
-  {
-    middleLightMinValue = analogRead(middleLightSensorPin);
-  }
-}
-
-double normlisedMiddleValue()
-{
-  return 100 * analogRead(middleLightSensorPin) / (middleLightMaxValue - middleLightMinValue);
-}
+ 
 
